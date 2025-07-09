@@ -1383,6 +1383,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                 <span className="text-gray-500">No group selected</span>
                               </button>
                               {GROUP_OPTIONS.map((group, index) => (
+                              {GROUP_NAMES.map((group, index) => (
                                 <button
                                   key={group}
                                   type="button"
@@ -1391,7 +1392,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     setIsGroupNameDropdownOpen(false);
                                   }}
                                   className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
-                                    index !== GROUP_OPTIONS.length - 1 ? 'border-b border-gray-100' : ''
+                                    index !== GROUP_NAMES.length - 1 ? 'border-b border-gray-100' : ''
                                   } ${
                                     formData.groupName === group ? 'bg-blue-50 text-blue-700' : ''
                                   }`}
