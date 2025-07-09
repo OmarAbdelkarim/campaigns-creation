@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Calendar, Clock, Phone, Globe, ChevronDown, ChevronUp, Info, Workflow, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { X, Calendar, Clock, Phone, Globe, ChevronDown, ChevronUp, Info, Workflow, ChevronLeft, ChevronRight, AlertCircle, Settings } from 'lucide-react';
 import { TimeInput } from './TimeInput';
 import { TimePicker } from './TimePicker';
 import { DatePicker } from './DatePicker';
@@ -36,6 +36,9 @@ interface FormData {
   maxTries: number;
   retryInterval: string; // Changed to HH:MM:SS format
   concurrency: number;
+  // Advanced configurations
+  groupName: string;
+  concurrentCallsPerAgent: number;
 }
 
 const WEEKDAYS = [
@@ -109,6 +112,20 @@ const PHONE_NUMBERS: PhoneNumber[] = [
     flag: '🇬🇧',
     status: 'active'
   }
+];
+
+// Mock group names for the dropdown
+const GROUP_NAMES = [
+  'Sales Team',
+  'Support Team',
+  'Marketing Team',
+  'Customer Success',
+  'Lead Generation',
+  'Follow-up Team',
+  'Premium Support',
+  'Regional Team A',
+  'Regional Team B',
+  'Night Shift'
 ];
 
 // Helper function to get user's timezone
@@ -239,7 +256,10 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     timezone: getUserTimezone(),
     maxTries: 1,
     retryInterval: '00:00:00', // Default to HH:MM:SS format
-    concurrency: 1
+    concurrency: 1,
+    // Advanced configurations
+    groupName: '',
+    concurrentCallsPerAgent: 1
   });
 
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
@@ -249,6 +269,8 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   const [isTimezoneDropdownOpen, setIsTimezoneDropdownOpen] = useState(false);
   const [isPhoneNumberDropdownOpen, setIsPhoneNumberDropdownOpen] = useState(false);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [isAdvancedConfigExpanded, setIsAdvancedConfigExpanded] = useState(false);
+  const [isGroupNameDropdownOpen, setIsGroupNameDropdownOpen] = useState(false);
 
   // Update schedule when date range changes
   useEffect(() => {
@@ -325,6 +347,13 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
       if (!timeRegex.test(formData.retryInterval)) {
         newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
+      }
+
+      // Advanced configurations validation (only if expanded and fields have values)
+      if (isAdvancedConfigExpanded) {
+        if (formData.concurrentCallsPerAgent < 1 || formData.concurrentCallsPerAgent > 50) {
+          newErrors.concurrentCallsPerAgent = 'Concurrent calls per agent must be between 1 and 50';
+        }
       }
     }
 
@@ -406,6 +435,13 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
     if (!timeRegex.test(formData.retryInterval)) {
       newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
+    }
+
+    // Advanced configurations validation (only if expanded and fields have values)
+    if (isAdvancedConfigExpanded) {
+      if (formData.concurrentCallsPerAgent < 1 || formData.concurrentCallsPerAgent > 50) {
+        newErrors.concurrentCallsPerAgent = 'Concurrent calls per agent must be between 1 and 50';
+      }
     }
 
     // Schedule Configuration validation
@@ -516,6 +552,11 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     setIsPhoneNumberDropdownOpen(false);
   };
 
+  const handleGroupNameSelect = (groupName: string) => {
+    setFormData(prev => ({ ...prev, groupName }));
+    setIsGroupNameDropdownOpen(false);
+  };
+
   // Clear IVR error when user selects an IVR (only after submit attempt)
   const handleIvrChange = (value: string) => {
     setFormData(prev => ({ ...prev, ivr: value }));
@@ -540,6 +581,9 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       }
       if (!target.closest('.phone-number-dropdown-container')) {
         setIsPhoneNumberDropdownOpen(false);
+      }
+      if (!target.closest('.group-name-dropdown-container')) {
+        setIsGroupNameDropdownOpen(false);
       }
     };
 
@@ -793,6 +837,136 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           This number will be displayed to call recipients as the caller ID
                         </p>
                       </div>
+                    </div>
+
+                    {/* Advanced Configurations - Collapsible Section */}
+                    <div className="border border-gray-200 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
+                        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200 rounded-lg"
+                      >
+                        <div className="flex items-center">
+                          <Settings className="w-5 h-5 mr-2 text-gray-600" />
+                          <span className="text-sm font-medium text-gray-900">Advanced Configurations</span>
+                          <span className="ml-2 text-xs text-gray-500">(Optional)</span>
+                        </div>
+                        {isAdvancedConfigExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
+
+                      {isAdvancedConfigExpanded && (
+                        <div className="px-6 pb-6 border-t border-gray-100 bg-gray-50">
+                          <div className="pt-6 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {/* Group Name Selection */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Group Name
+                                </label>
+                                <div className="relative group-name-dropdown-container">
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsGroupNameDropdownOpen(!isGroupNameDropdownOpen)}
+                                    className={`w-full form-input text-left flex items-center justify-between ${
+                                      getError('groupName') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                                    }`}
+                                    aria-describedby={getError('groupName') ? "group-name-error" : undefined}
+                                  >
+                                    <span className={formData.groupName ? 'text-gray-900' : 'text-gray-400'}>
+                                      {formData.groupName || 'Select group name'}
+                                    </span>
+                                    {isGroupNameDropdownOpen ? (
+                                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                                    )}
+                                  </button>
+
+                                  {isGroupNameDropdownOpen && (
+                                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                      <div className="p-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleGroupNameSelect('')}
+                                          className={`w-full px-3 py-2 text-left text-sm rounded hover:bg-gray-50 transition-colors duration-200 ${
+                                            !formData.groupName ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                                          }`}
+                                        >
+                                          <span className="text-gray-400 italic">No group selected</span>
+                                        </button>
+                                        {GROUP_NAMES.map((group, index) => (
+                                          <button
+                                            key={group}
+                                            type="button"
+                                            onClick={() => handleGroupNameSelect(group)}
+                                            className={`w-full px-3 py-2 text-left text-sm rounded hover:bg-gray-50 transition-colors duration-200 ${
+                                              index !== 0 ? 'border-t border-gray-100' : ''
+                                            } ${
+                                              formData.groupName === group ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                                            }`}
+                                          >
+                                            {group}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                {getError('groupName') && <p id="group-name-error" className="text-red-500 text-sm mt-1">{getError('groupName')}</p>}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Assign this campaign to a specific agent group
+                                </p>
+                              </div>
+
+                              {/* Concurrent Calls per Online Agent */}
+                              <div>
+                                <label htmlFor="concurrent-calls-per-agent" className="block text-sm font-medium text-gray-700 mb-2">
+                                  Concurrent Calls per Online Agent
+                                </label>
+                                <input
+                                  id="concurrent-calls-per-agent"
+                                  type="number"
+                                  min="1"
+                                  max="50"
+                                  value={formData.concurrentCallsPerAgent}
+                                  onChange={(e) => setFormData(prev => ({ 
+                                    ...prev, 
+                                    concurrentCallsPerAgent: parseInt(e.target.value) || 1 
+                                  }))}
+                                  className={`form-input h-12 ${
+                                    getError('concurrentCallsPerAgent') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                                  }`}
+                                  aria-describedby={getError('concurrentCallsPerAgent') ? "concurrent-calls-per-agent-error" : undefined}
+                                />
+                                {getError('concurrentCallsPerAgent') && (
+                                  <p id="concurrent-calls-per-agent-error" className="text-red-500 text-sm mt-1">
+                                    {getError('concurrentCallsPerAgent')}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Maximum simultaneous calls each online agent can handle
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start space-x-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                              <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm text-blue-800">
+                                <p className="font-medium mb-1">Advanced Configuration Notes</p>
+                                <ul className="text-blue-700 space-y-1 text-xs">
+                                  <li>• Group assignment helps organize campaigns by team or department</li>
+                                  <li>• Concurrent calls per agent setting overrides the global concurrency limit for individual agents</li>
+                                  <li>• These settings are optional and can be configured later if needed</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
