@@ -840,130 +840,117 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     </div>
 
                     {/* Advanced Configurations - Collapsible Section */}
-                    <div className="border border-gray-200 rounded-lg">
+                    <div className="space-y-4">
                       <button
                         type="button"
                         onClick={() => setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
-                        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200 rounded-lg"
+                        className="flex items-center justify-between w-full p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                       >
-                        <div className="flex items-center">
-                          <Settings className="w-5 h-5 mr-2 text-gray-600" />
-                          <span className="text-sm font-medium text-gray-900">Advanced Configurations</span>
-                          <span className="ml-2 text-xs text-gray-500">(Optional)</span>
+                        <div className="flex items-center space-x-3">
+                          <h4 className="text-sm font-medium text-gray-900">Advanced Configurations</h4>
+                          <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">Optional</span>
                         </div>
                         {isAdvancedConfigExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                          <ChevronUp className="w-5 h-5 text-gray-500" />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                          <ChevronDown className="w-5 h-5 text-gray-500" />
                         )}
                       </button>
 
                       {isAdvancedConfigExpanded && (
-                        <div className="px-6 pb-6 border-t border-gray-100 bg-gray-50">
-                          <div className="pt-6 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {/* Group Name Selection */}
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Group Name
-                                </label>
-                                <div className="relative group-name-dropdown-container">
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsGroupNameDropdownOpen(!isGroupNameDropdownOpen)}
-                                    className={`w-full form-input text-left flex items-center justify-between ${
-                                      getError('groupName') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                                    }`}
-                                    aria-describedby={getError('groupName') ? "group-name-error" : undefined}
-                                  >
-                                    <span className={formData.groupName ? 'text-gray-900' : 'text-gray-400'}>
-                                      {formData.groupName || 'Select group name'}
-                                    </span>
-                                    {isGroupNameDropdownOpen ? (
-                                      <ChevronUp className="w-4 h-4 text-gray-400" />
-                                    ) : (
-                                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                                    )}
-                                  </button>
-
-                                  {isGroupNameDropdownOpen && (
-                                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                      <div className="p-2">
-                                        <button
-                                          type="button"
-                                          onClick={() => handleGroupNameSelect('')}
-                                          className={`w-full px-3 py-2 text-left text-sm rounded hover:bg-gray-50 transition-colors duration-200 ${
-                                            !formData.groupName ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
-                                          }`}
-                                        >
-                                          <span className="text-gray-400 italic">No group selected</span>
-                                        </button>
-                                        {GROUP_NAMES.map((group, index) => (
-                                          <button
-                                            key={group}
-                                            type="button"
-                                            onClick={() => handleGroupNameSelect(group)}
-                                            className={`w-full px-3 py-2 text-left text-sm rounded hover:bg-gray-50 transition-colors duration-200 ${
-                                              index !== 0 ? 'border-t border-gray-100' : ''
-                                            } ${
-                                              formData.groupName === group ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
-                                            }`}
-                                          >
-                                            {group}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
+                        <div className="p-6 bg-white border border-gray-200 rounded-lg space-y-6 animate-fade-in">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Group Name Selection */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Group Name
+                              </label>
+                              <div className="relative group-name-dropdown-container">
+                                <button
+                                  type="button"
+                                  onClick={() => setIsGroupNameDropdownOpen(!isGroupNameDropdownOpen)}
+                                  className="w-full form-input text-left flex items-center justify-between"
+                                >
+                                  <span className={formData.groupName ? 'text-gray-900' : 'text-gray-400'}>
+                                    {formData.groupName || 'Select group (optional)'}
+                                  </span>
+                                  {isGroupNameDropdownOpen ? (
+                                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-gray-400" />
                                   )}
-                                </div>
-                                {getError('groupName') && <p id="group-name-error" className="text-red-500 text-sm mt-1">{getError('groupName')}</p>}
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Assign this campaign to a specific agent group
-                                </p>
-                              </div>
+                                </button>
 
-                              {/* Concurrent Calls per Online Agent */}
-                              <div>
-                                <label htmlFor="concurrent-calls-per-agent" className="block text-sm font-medium text-gray-700 mb-2">
-                                  Concurrent Calls per Online Agent
-                                </label>
-                                <input
-                                  id="concurrent-calls-per-agent"
-                                  type="number"
-                                  min="1"
-                                  max="50"
-                                  value={formData.concurrentCallsPerAgent}
-                                  onChange={(e) => setFormData(prev => ({ 
-                                    ...prev, 
-                                    concurrentCallsPerAgent: parseInt(e.target.value) || 1 
-                                  }))}
-                                  className={`form-input h-12 ${
-                                    getError('concurrentCallsPerAgent') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                                  }`}
-                                  aria-describedby={getError('concurrentCallsPerAgent') ? "concurrent-calls-per-agent-error" : undefined}
-                                />
-                                {getError('concurrentCallsPerAgent') && (
-                                  <p id="concurrent-calls-per-agent-error" className="text-red-500 text-sm mt-1">
-                                    {getError('concurrentCallsPerAgent')}
-                                  </p>
+                                {isGroupNameDropdownOpen && (
+                                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setFormData(prev => ({ ...prev, groupName: '' }));
+                                        setIsGroupNameDropdownOpen(false);
+                                      }}
+                                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors duration-200 ${
+                                        !formData.groupName ? 'bg-blue-50 text-blue-700' : ''
+                                      }`}
+                                    >
+                                      <span className="text-gray-500 italic">No group selected</span>
+                                    </button>
+                                    {GROUP_NAMES.map((group, index) => (
+                                      <button
+                                        key={group}
+                                        type="button"
+                                        onClick={() => {
+                                          setFormData(prev => ({ ...prev, groupName: group }));
+                                          setIsGroupNameDropdownOpen(false);
+                                        }}
+                                        className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 ${
+                                          index !== GROUP_NAMES.length - 1 ? 'border-b border-gray-100' : ''
+                                        } ${
+                                          formData.groupName === group ? 'bg-blue-50 text-blue-700' : ''
+                                        }`}
+                                      >
+                                        <span className="font-medium">{group}</span>
+                                      </button>
+                                    ))}
+                                  </div>
                                 )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Maximum simultaneous calls each online agent can handle
-                                </p>
                               </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Assign this campaign to a specific agent group
+                              </p>
                             </div>
 
-                            <div className="flex items-start space-x-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                              <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                              <div className="text-sm text-blue-800">
-                                <p className="font-medium mb-1">Advanced Configuration Notes</p>
-                                <ul className="text-blue-700 space-y-1 text-xs">
-                                  <li>• Group assignment helps organize campaigns by team or department</li>
-                                  <li>• Concurrent calls per agent setting overrides the global concurrency limit for individual agents</li>
-                                  <li>• These settings are optional and can be configured later if needed</li>
-                                </ul>
-                              </div>
+                            {/* Concurrent Calls per Online Agent */}
+                            <div>
+                              <label htmlFor="concurrent-calls-per-agent" className="block text-sm font-medium text-gray-700 mb-2">
+                                Concurrent Calls per Online Agent
+                              </label>
+                              <input
+                                id="concurrent-calls-per-agent"
+                                type="number"
+                                min="1"
+                                max="50"
+                                value={formData.concurrentCallsPerAgent}
+                                onChange={(e) => setFormData(prev => ({ ...prev, concurrentCallsPerAgent: parseInt(e.target.value) || 1 }))}
+                                className="form-input h-12"
+                                aria-describedby={getError('concurrentCallsPerAgent') ? "concurrent-calls-per-agent-error" : undefined}
+                              />
+                              {getError('concurrentCallsPerAgent') && (
+                                <p id="concurrent-calls-per-agent-error" className="text-red-500 text-sm mt-1">
+                                  {getError('concurrentCallsPerAgent')}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-500 mt-1">
+                                Maximum simultaneous calls per online agent (1-50)
+                              </p>
                             </div>
+                          </div>
+
+                          <div className="flex items-start space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-blue-800">
+                              <span className="font-medium">Advanced settings:</span> These configurations provide additional control over campaign assignment and agent workload distribution.
+                            </p>
                           </div>
                         </div>
                       )}
