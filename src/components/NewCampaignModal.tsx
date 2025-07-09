@@ -431,6 +431,13 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       newErrors.concurrency = 'Concurrency must be between 1 and 100';
     }
 
+    // Advanced configurations validation (only if section is expanded)
+    if (isAdvancedConfigExpanded) {
+      if (formData.concurrentCallsPerAgent < 1 || formData.concurrentCallsPerAgent > 50) {
+        newErrors.concurrentCallsPerAgent = 'Concurrent calls per agent must be between 1 and 50';
+      }
+    }
+
     // Validate retry interval format (HH:MM:SS)
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
     if (!timeRegex.test(formData.retryInterval)) {
@@ -581,6 +588,9 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       }
       if (!target.closest('.phone-number-dropdown-container')) {
         setIsPhoneNumberDropdownOpen(false);
+      }
+      if (!target.closest('.group-name-dropdown-container')) {
+        setIsGroupNameDropdownOpen(false);
       }
       if (!target.closest('.group-name-dropdown-container')) {
         setIsGroupNameDropdownOpen(false);
@@ -1299,6 +1309,135 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Advanced Configurations - Collapsible Section */}
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
+                  className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors duration-200"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="text-left">
+                      <h4 className="text-sm font-medium text-gray-900">Advanced Configurations</h4>
+                      <p className="text-xs text-gray-500">Optional settings for advanced campaign management</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">Optional</span>
+                    {isAdvancedConfigExpanded ? (
+                      <ChevronUp className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Collapsible Content */}
+                {isAdvancedConfigExpanded && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6 animate-fade-in">
+                    <div className="flex items-start space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-blue-800">
+                        These advanced settings provide additional control over campaign behavior and agent assignment.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Group Name Selection */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Group Name
+                        </label>
+                        <div className="relative group-name-dropdown-container">
+                          <button
+                            type="button"
+                            onClick={() => setIsGroupNameDropdownOpen(!isGroupNameDropdownOpen)}
+                            className="w-full form-input text-left flex items-center justify-between"
+                          >
+                            <span className={formData.groupName ? 'text-gray-900' : 'text-gray-400'}>
+                              {formData.groupName || 'No group selected'}
+                            </span>
+                            {isGroupNameDropdownOpen ? (
+                              <ChevronUp className="w-4 h-4 text-gray-400" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-gray-400" />
+                            )}
+                          </button>
+
+                          {isGroupNameDropdownOpen && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormData(prev => ({ ...prev, groupName: '' }));
+                                  setIsGroupNameDropdownOpen(false);
+                                }}
+                                className={`w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors duration-200 ${
+                                  !formData.groupName ? 'bg-blue-50 text-blue-700' : ''
+                                }`}
+                              >
+                                <span className="text-gray-500">No group selected</span>
+                              </button>
+                              {GROUP_OPTIONS.map((group, index) => (
+                                <button
+                                  key={group}
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, groupName: group }));
+                                    setIsGroupNameDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
+                                    index !== GROUP_OPTIONS.length - 1 ? 'border-b border-gray-100' : ''
+                                  } ${
+                                    formData.groupName === group ? 'bg-blue-50 text-blue-700' : ''
+                                  }`}
+                                >
+                                  <span>{group}</span>
+                                  {formData.groupName === group && (
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Assign this campaign to a specific agent group
+                        </p>
+                      </div>
+
+                      {/* Concurrent Calls per Online Agent */}
+                      <div>
+                        <label htmlFor="concurrent-calls-per-agent" className="block text-sm font-medium text-gray-700 mb-2">
+                          Concurrent Calls per Online Agent
+                        </label>
+                        <input
+                          id="concurrent-calls-per-agent"
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={formData.concurrentCallsPerAgent}
+                          onChange={(e) => setFormData(prev => ({ ...prev, concurrentCallsPerAgent: parseInt(e.target.value) || 1 }))}
+                          className="form-input h-12"
+                          aria-describedby={getError('concurrentCallsPerAgent') ? "concurrent-calls-per-agent-error" : undefined}
+                        />
+                        {getError('concurrentCallsPerAgent') && (
+                          <p id="concurrent-calls-per-agent-error" className="text-red-500 text-sm mt-1">
+                            {getError('concurrentCallsPerAgent')}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Maximum simultaneous calls per online agent (1-50)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Form Actions */}
               <div className="flex items-center justify-between pt-6 border-t border-gray-200">
