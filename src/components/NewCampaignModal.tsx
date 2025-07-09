@@ -661,7 +661,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                 ))}
               </div>
             </div>
-          </div>
+
         )}
       </div>
     );
