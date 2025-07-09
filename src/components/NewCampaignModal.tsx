@@ -660,6 +660,138 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                   </button>
                 ))}
               </div>
+
+              {/* Advanced Configurations - Collapsible Section */}
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+                  className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors duration-200"
+                >
+                  <div className="flex items-center space-x-3">
+                    <Settings className="w-5 h-5 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-900">Advanced Configurations</span>
+                  </div>
+                  {isAdvancedOpen ? (
+                    <ChevronUp className="w-5 h-5 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
+
+                {/* Collapsible Content */}
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  isAdvancedOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                  <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
+                    {/* Group Name Selection */}
+                    <div>
+                      <label htmlFor="group-name" className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="flex items-center">
+                          <Users className="w-4 h-4 mr-1" />
+                          Group Name
+                        </div>
+                      </label>
+                      <div className="relative group-dropdown-container">
+                        <button
+                          type="button"
+                          onClick={() => setIsGroupDropdownOpen(!isGroupDropdownOpen)}
+                          className={`w-full form-input text-left flex items-center justify-between ${
+                            errors.groupName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                          }`}
+                          aria-describedby={errors.groupName ? "group-name-error" : undefined}
+                        >
+                          <div className="flex items-center">
+                            <span className={selectedGroup ? 'text-gray-900' : 'text-gray-400'}>
+                              {selectedGroup ? (
+                                <div className="flex items-center justify-between w-full">
+                                  <span className="font-medium">{selectedGroup.name}</span>
+                                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                    {selectedGroup.onlineAgents} online
+                                  </span>
+                                </div>
+                              ) : (
+                                'Select group'
+                              )}
+                            </span>
+                          </div>
+                          {isGroupDropdownOpen ? (
+                            <ChevronUp className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
+                          )}
+                        </button>
+
+                        {isGroupDropdownOpen && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            {GROUPS.map((group, index) => (
+                              <button
+                                key={group.id}
+                                type="button"
+                                onClick={() => handleGroupSelect(group)}
+                                className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
+                                  index !== GROUPS.length - 1 ? 'border-b border-gray-100' : ''
+                                } ${
+                                  formData.groupName === group.id ? 'bg-blue-50 text-blue-700' : ''
+                                }`}
+                              >
+                                <div className="flex items-center">
+                                  <span className="font-medium">{group.name}</span>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                    {group.onlineAgents} online
+                                  </span>
+                                  {formData.groupName === group.id && (
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {errors.groupName && <p id="group-name-error" className="text-red-500 text-sm mt-1">{errors.groupName}</p>}
+                      <p className="text-xs text-gray-500 mt-1">
+                        Select the agent group for this campaign
+                      </p>
+                    </div>
+
+                    {/* Concurrent Calls per Online Agent */}
+                    <div>
+                      <label htmlFor="concurrent-calls-per-agent" className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="flex items-center">
+                          <Phone className="w-4 h-4 mr-1" />
+                          Concurrent Calls per Online Agent
+                        </div>
+                      </label>
+                      <input
+                        id="concurrent-calls-per-agent"
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={formData.concurrentCallsPerAgent}
+                        onChange={(e) => setFormData(prev => ({ 
+                          ...prev, 
+                          concurrentCallsPerAgent: parseInt(e.target.value) || 1 
+                        }))}
+                        className={`form-input h-12 ${
+                          errors.concurrentCallsPerAgent ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                        }`}
+                        aria-describedby={errors.concurrentCallsPerAgent ? "concurrent-calls-error" : undefined}
+                      />
+                      {errors.concurrentCallsPerAgent && (
+                        <p id="concurrent-calls-error" className="text-red-500 text-sm mt-1">
+                          {errors.concurrentCallsPerAgent}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">
+                        Maximum simultaneous calls each online agent can handle (1-10)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1200,138 +1332,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
                       <div className="space-y-4">
                         {WEEKDAYS.map(day => {
-                          const isDayInDateRange = formData.startDate && formData.endDate 
-                            ? isDayInRange(day.dayIndex, formData.startDate, formData.endDate)
-                            : true;
-                          
-                          const isDisabledByDateRange = formData.startDate && formData.endDate && !isDayInDateRange;
-
-                          return (
-                            <div key={day.key} className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                {/* Day name and checkbox */}
-                                <div className="flex items-center min-w-[120px]">
-                                  <input
-                                    type="checkbox"
-                                    id={`schedule-${day.key}`}
-                                    checked={formData.schedule[day.key].enabled}
-                                    onChange={(e) => handleScheduleChange(day.key, 'enabled', e.target.checked)}
-                                    disabled={isDisabledByDateRange}
-                                    className={`w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
-                                      isDisabledByDateRange 
-                                        ? 'text-gray-300 cursor-not-allowed' 
-                                        : 'text-blue-600 cursor-pointer'
-                                    }`}
-                                  />
-                                  <label 
-                                    htmlFor={`schedule-${day.key}`} 
-                                    className={`ml-3 text-sm font-medium select-none ${
-                                      isDisabledByDateRange 
-                                        ? 'text-gray-400 cursor-not-allowed' 
-                                        : formData.schedule[day.key].enabled
-                                          ? 'text-gray-900 cursor-pointer'
-                                          : 'text-gray-600 cursor-pointer'
-                                    }`}
-                                  >
-                                    {day.label}
-                                    {isDisabledByDateRange && (
-                                      <span className="ml-2 text-xs text-gray-400">(not in date range)</span>
-                                    )}
-                                  </label>
-                                </div>
-
-                                {/* Enhanced Time range inputs */}
-                                <div className="flex items-center space-x-3">
-                                  <TimeSlotInput
-                                    dayKey={day.key}
-                                    type="start"
-                                    value={formData.schedule[day.key].startTime}
-                                    enabled={formData.schedule[day.key].enabled && !isDisabledByDateRange}
-                                    onChange={(value) => handleScheduleChange(day.key, 'startTime', value)}
-                                  />
-                                  
-                                  <span className="text-gray-400 text-sm font-medium px-2">to</span>
-                                  
-                                  <TimeSlotInput
-                                    dayKey={day.key}
-                                    type="end"
-                                    value={formData.schedule[day.key].endTime}
-                                    enabled={formData.schedule[day.key].enabled && !isDisabledByDateRange}
-                                    onChange={(value) => handleScheduleChange(day.key, 'endTime', value)}
-                                  />
-                                </div>
-                              </div>
-                              
-                              {/* Error message for this specific day */}
-                              {getError(`schedule-${day.key}`) && (
-                                <p className="text-red-500 text-xs ml-7">{getError(`schedule-${day.key}`)}</p>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    
-                    {getError('schedule') && <p className="text-red-500 text-sm">{getError('schedule')}</p>}
-                    <div className="flex items-start space-x-2">
-                      <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-gray-600">
-                        {formData.startDate && formData.endDate ? (
-                          'Days are automatically selected based on your campaign date range. Only days that occur within the selected dates are enabled.'
-                        ) : (
-                          'Select campaign start and end dates above to automatically enable relevant days. You can then customize the time slots for each enabled day.'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Form Actions */}
-              <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                <div className="flex items-center space-x-4">
-                  {currentStep > 1 && (
-                    <button
-                      type="button"
-                      onClick={handlePrevious}
-                      className="btn-secondary flex items-center"
-                    >
-                      <ChevronLeft className="w-4 h-4 mr-1" />
-                      Previous
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                  
-                  {currentStep < 2 ? (
-                    <button
-                      type="button"
-                      onClick={handleNext}
-                      className="btn-primary flex items-center"
-                    >
-                      Next
-                      <ChevronRight className="w-4 h-4 ml-1" />
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      className="btn-primary"
-                    >
-                      Create Campaign
-                    </button>
-                  )}
-                </div>
-              </div>
-            </form>
-          </div>
         </div>
       </div>
     </div>
