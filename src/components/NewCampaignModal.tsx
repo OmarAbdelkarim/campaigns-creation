@@ -213,6 +213,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                 value={formData.startDate}
                 onChange={(value) => handleInputChange('startDate', value)}
                 placeholder="Select start date"
+               label="Start Date"
               />
             </div>
             <div>
@@ -223,6 +224,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                 value={formData.endDate}
                 onChange={(value) => handleInputChange('endDate', value)}
                 placeholder="Select end date"
+               label="End Date"
               />
             </div>
           </div>
