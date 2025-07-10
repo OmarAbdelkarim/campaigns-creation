@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Calendar, Clock, Phone, Globe, ChevronDown, ChevronUp, Info, Workflow, ChevronLeft, ChevronRight, AlertCircle, Users } from 'lucide-react';
+import { X, Calendar, Clock, Phone, Globe, ChevronDown, ChevronUp, Info, Workflow, ChevronLeft, ChevronRight, AlertCircle, Users, Settings } from 'lucide-react';
 import { TimeInput } from './TimeInput';
 import { TimePicker } from './TimePicker';
 import { DatePicker } from './DatePicker';
@@ -929,6 +929,112 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           helperText="Time to wait between retry attempts"
                           required
                         />
+                      </div>
+                    </div>
+
+                    {/* Advanced Configurations Section */}
+                    <div className="space-y-4">
+                      <div className="border-t border-gray-200 pt-6">
+                        <button
+                          type="button"
+                          onClick={() => setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
+                          className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 border border-gray-200"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <Settings className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <div className="text-left">
+                              <h4 className="text-sm font-medium text-gray-900">Advanced Configurations</h4>
+                              <p className="text-xs text-gray-500">Optional settings for advanced campaign control</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-blue-600 font-medium">Optional</span>
+                            {isAdvancedConfigExpanded ? (
+                              <ChevronUp className="w-4 h-4 text-gray-400" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-gray-400" />
+                            )}
+                          </div>
+                        </button>
+
+                        {/* Collapsible Content */}
+                        {isAdvancedConfigExpanded && (
+                          <div className="mt-4 p-6 bg-white border border-gray-200 rounded-lg space-y-6 animate-fade-in">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                              <div className="flex items-start space-x-2">
+                                <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                                <div className="text-sm text-blue-800">
+                                  <p className="font-medium mb-1">Advanced Campaign Settings</p>
+                                  <p className="text-blue-700">
+                                    Configure additional options for fine-tuned campaign control and agent management.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {/* Group Name Selection */}
+                              <div>
+                                <label htmlFor="group-name" className="block text-sm font-medium text-gray-700 mb-2">
+                                  <div className="flex items-center">
+                                    <Users className="w-4 h-4 mr-1" />
+                                    Group Name
+                                  </div>
+                                </label>
+                                <select
+                                  id="group-name"
+                                  value={formData.groupName}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, groupName: e.target.value }))}
+                                  className={`form-select h-12 ${
+                                    getError('groupName') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                                  }`}
+                                  aria-describedby={getError('groupName') ? "group-name-error" : undefined}
+                                >
+                                  <option value="">Select group (optional)</option>
+                                  {GROUP_OPTIONS.map(group => (
+                                    <option key={group} value={group}>{group}</option>
+                                  ))}
+                                </select>
+                                {getError('groupName') && (
+                                  <p id="group-name-error" className="text-red-500 text-sm mt-1">{getError('groupName')}</p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Assign campaign to a specific agent group
+                                </p>
+                              </div>
+
+                              {/* Concurrent Calls per Online Agent */}
+                              <div>
+                                <label htmlFor="concurrent-calls-per-agent" className="block text-sm font-medium text-gray-700 mb-2">
+                                  <div className="flex items-center">
+                                    <Phone className="w-4 h-4 mr-1" />
+                                    Concurrent Calls per Online Agent
+                                  </div>
+                                </label>
+                                <input
+                                  id="concurrent-calls-per-agent"
+                                  type="number"
+                                  min="1"
+                                  max="50"
+                                  value={formData.concurrentCallsPerAgent}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, concurrentCallsPerAgent: parseInt(e.target.value) || 1 }))}
+                                  className={`form-input h-12 ${
+                                    getError('concurrentCallsPerAgent') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                                  }`}
+                                  aria-describedby={getError('concurrentCallsPerAgent') ? "concurrent-calls-per-agent-error" : undefined}
+                                />
+                                {getError('concurrentCallsPerAgent') && (
+                                  <p id="concurrent-calls-per-agent-error" className="text-red-500 text-sm mt-1">{getError('concurrentCallsPerAgent')}</p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Maximum simultaneous calls per online agent
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
