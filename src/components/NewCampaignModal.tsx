@@ -36,6 +36,8 @@ interface FormData {
   maxTries: number;
   retryInterval: string; // Changed to HH:MM:SS format
   concurrency: number;
+  groupName: string;
+  concurrentCallsPerAgent: number;
 }
 
 const WEEKDAYS = [
@@ -65,6 +67,18 @@ const IVR_OPTIONS = [
   'PhonebotElevenlabs3',
   'AccountWorkingHours',
   'DefaultClient'
+];
+
+// Available group names for the dropdown
+const GROUP_OPTIONS = [
+  'Sales Team',
+  'Customer Support',
+  'Marketing Team',
+  'Technical Support',
+  'Lead Generation',
+  'Account Management',
+  'Quality Assurance',
+  'Training Group'
 ];
 
 // Phone numbers matching the screenshot exactly
@@ -239,7 +253,9 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     timezone: getUserTimezone(),
     maxTries: 1,
     retryInterval: '00:00:00', // Default to HH:MM:SS format
-    concurrency: 1
+    concurrency: 1,
+    groupName: '',
+    concurrentCallsPerAgent: 1
   });
 
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
@@ -249,6 +265,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   const [isTimezoneDropdownOpen, setIsTimezoneDropdownOpen] = useState(false);
   const [isPhoneNumberDropdownOpen, setIsPhoneNumberDropdownOpen] = useState(false);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [isAdvancedConfigExpanded, setIsAdvancedConfigExpanded] = useState(false);
 
   // Update schedule when date range changes
   useEffect(() => {
@@ -319,6 +336,17 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
       if (formData.concurrency < 1 || formData.concurrency > 100) {
         newErrors.concurrency = 'Concurrency must be between 1 and 100';
+      }
+
+      // Advanced configurations validation (only if expanded and fields have values)
+      if (isAdvancedConfigExpanded) {
+        if (formData.groupName && !GROUP_OPTIONS.includes(formData.groupName)) {
+          newErrors.groupName = 'Please select a valid group name';
+        }
+
+        if (formData.concurrentCallsPerAgent < 1 || formData.concurrentCallsPerAgent > 50) {
+          newErrors.concurrentCallsPerAgent = 'Concurrent calls per agent must be between 1 and 50';
+        }
       }
 
       // Validate retry interval format (HH:MM:SS)
@@ -400,6 +428,17 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
     if (formData.concurrency < 1 || formData.concurrency > 100) {
       newErrors.concurrency = 'Concurrency must be between 1 and 100';
+    }
+
+    // Advanced configurations validation (only if expanded and fields have values)
+    if (isAdvancedConfigExpanded) {
+      if (formData.groupName && !GROUP_OPTIONS.includes(formData.groupName)) {
+        newErrors.groupName = 'Please select a valid group name';
+      }
+
+      if (formData.concurrentCallsPerAgent < 1 || formData.concurrentCallsPerAgent > 50) {
+        newErrors.concurrentCallsPerAgent = 'Concurrent calls per agent must be between 1 and 50';
+      }
     }
 
     // Validate retry interval format (HH:MM:SS)
