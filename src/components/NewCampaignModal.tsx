@@ -722,7 +722,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                             </div>
                           </div>
                         </label>
-                        <div className="relative">
+                        <div className="relative phone-number-dropdown-container">
                           <button
                             type="button"
                             onClick={() => setIsPhoneNumberDropdownOpen(!isPhoneNumberDropdownOpen)}
@@ -773,6 +773,13 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                       <span className="font-medium">{phone.formatted}</span>
                                     </div>
                                     {isSelected && (
+                                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                         {getError('phoneNumber') && <p id="phone-number-error" className="text-red-500 text-sm mt-1">{getError('phoneNumber')}</p>}
                         <p className="text-xs text-gray-500 mt-1">
@@ -913,7 +920,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           aria-label={!formData.ivr ? "Select an IVR to enable concurrency auto-scaling" : "Toggle concurrency auto-scaling"}
                         >
                           <span
-                            className={`relative group
+                            className={`
                               inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out
                               ${!formData.ivr 
                                 ? 'translate-x-1' 
@@ -1188,15 +1195,8 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         {WEEKDAYS.map(day => {
                           const isDayInDateRange = formData.startDate && formData.endDate 
                             ? isDayInRange(day.dayIndex, formData.startDate, formData.endDate)
-                            
-                            {/* Hover Tooltip for Disabled State */}
-                            {!formData.ivr && (
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                Please select an IVR first to enable auto-scaling
-                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                              </div>
-                            )}
                             : true;
+                          
                           const isDisabledByDateRange = formData.startDate && formData.endDate && !isDayInDateRange;
                           const hasScheduleError = Boolean(getError(`schedule-${day.key}`));
 
