@@ -952,7 +952,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                               Advanced Concurrency Settings <span className="text-gray-500 font-normal">(optional)</span>
                             </h4>
                             <p className="text-xs text-gray-600 mt-1">
-                              Auto-scale the number of concurrent outbound calls based on the number of online agents
+                              Automate the number of concurrent outbound calls based on the number of online agents
                             </p>
                           </div>
                         </div>
