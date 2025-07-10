@@ -842,7 +842,8 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           aria-describedby={getError('ivr') ? "ivr-error" : undefined}
                         >
                           <option value="">Select IVR</option>
-                          {IVR_OPTIONS.map(ivr => (
+                          <span>Concurrency Auto-Scaling</span>
+                          <span className="text-gray-500 font-normal">(optional)</span>
                             <option key={ivr} value={ivr}>{ivr}</option>
                           ))}
                         </select>
@@ -1252,9 +1253,9 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       </div>
                     </div>
                     
-                    {getError('schedule') && <p className="text-red-500 text-sm">{getError('schedule')}</p>}
-                    <div className="flex items-start space-x-2">
-                      <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-gray-600">
+                      Auto-scale the number of concurrent outbound calls based on the number of online agents
+                    </p>
                       <p className="text-xs text-gray-600">
                         {formData.startDate && formData.endDate ? (
                           'Days are automatically selected based on your campaign date range. Only days that occur within the selected dates are enabled.'
