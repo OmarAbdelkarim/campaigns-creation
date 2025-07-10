@@ -888,24 +888,39 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
                     {/* Advanced Configurations Section */}
                     <div className="border border-gray-200 rounded-lg">
-                      <button
-                        type="button"
-                        onClick={toggleAdvancedConfig}
-                        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200 rounded-lg"
-                      >
+                      <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
                         <div className="flex items-center space-x-3">
                           <Settings className="w-5 h-5 text-gray-600" />
-                          <span className="text-sm font-medium text-gray-900">Concurrency Auto-Scaling <span className="text-gray-500 font-normal">(optional)</span></span>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900">
+                              Concurrency Auto-Scaling <span className="text-gray-500 font-normal">(optional)</span>
+                            </h4>
+                            <p className="text-xs text-gray-600 mt-1">
+                              Auto-scale the number of concurrent outbound calls based on the number of online agents
+                            </p>
+                          </div>
                         </div>
-                        {isAdvancedConfigExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-gray-400" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-gray-400" />
-                        )}
-                      </button>
-                      <p className="text-xs text-gray-600 mt-1 ml-6">
-                        Auto-scale the number of concurrent outbound calls based on the number of online agents
-                      </p>
+                        
+                        {/* Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={() => setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
+                          className={`
+                            relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                            ${isAdvancedConfigExpanded ? 'bg-blue-600' : 'bg-gray-300'}
+                          `}
+                          role="switch"
+                          aria-checked={isAdvancedConfigExpanded}
+                          aria-label="Toggle concurrency auto-scaling"
+                        >
+                          <span
+                            className={`
+                              inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out
+                              ${isAdvancedConfigExpanded ? 'translate-x-6' : 'translate-x-1'}
+                            `}
+                          />
+                        </button>
+                      </div>
 
                       {isAdvancedConfigExpanded && (
                         <div className="px-6 pb-6 border-t border-gray-200 bg-gray-50">
