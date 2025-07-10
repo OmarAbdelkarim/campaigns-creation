@@ -42,6 +42,15 @@ interface FormData {
   maxTries: number;
   retryInterval: string;
   concurrency: number;
+  // Concurrency Auto-Scaling fields
+  autoScalingEnabled: boolean;
+  minConcurrency: number;
+  maxConcurrency: number;
+  targetAnswerRate: number;
+  scaleUpThreshold: number;
+  scaleDownThreshold: number;
+  evaluationPeriod: number;
+  groupName: string;
   concurrencyAutoScaling: boolean;
   minConcurrency: number;
   maxConcurrency: number;
@@ -406,6 +415,15 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     maxTries: 1,
     retryInterval: '00:00:00',
     concurrency: 1,
+    // Concurrency Auto-Scaling defaults
+    autoScalingEnabled: false,
+    minConcurrency: 1,
+    maxConcurrency: 10,
+    targetAnswerRate: 70,
+    scaleUpThreshold: 80,
+    scaleDownThreshold: 60,
+    evaluationPeriod: 5,
+    groupName: '',
     concurrencyAutoScaling: false,
     minConcurrency: 1,
     maxConcurrency: 10,
@@ -510,6 +528,43 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
       if (!timeRegex.test(formData.retryInterval)) {
         newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
+      }
+
+      // Concurrency Auto-Scaling validation (only when enabled)
+      if (formData.autoScalingEnabled) {
+        if (formData.minConcurrency < 1) {
+          newErrors.minConcurrency = 'Minimum concurrency must be at least 1';
+        }
+
+        if (formData.maxConcurrency < 1) {
+          newErrors.maxConcurrency = 'Maximum concurrency must be at least 1';
+        } else if (formData.maxConcurrency > 100) {
+          newErrors.maxConcurrency = 'Maximum concurrency cannot exceed 100';
+        } else if (formData.maxConcurrency <= formData.minConcurrency) {
+          newErrors.maxConcurrency = 'Maximum concurrency must be greater than minimum';
+        }
+
+        if (!formData.targetAnswerRate || formData.targetAnswerRate < 1 || formData.targetAnswerRate > 100) {
+          newErrors.targetAnswerRate = 'Target answer rate must be between 1-100%';
+        }
+
+        if (!formData.scaleUpThreshold || formData.scaleUpThreshold < 1 || formData.scaleUpThreshold > 100) {
+          newErrors.scaleUpThreshold = 'Scale up threshold must be between 1-100%';
+        }
+
+        if (!formData.scaleDownThreshold || formData.scaleDownThreshold < 1 || formData.scaleDownThreshold > 100) {
+          newErrors.scaleDownThreshold = 'Scale down threshold must be between 1-100%';
+        } else if (formData.scaleDownThreshold >= formData.scaleUpThreshold) {
+          newErrors.scaleDownThreshold = 'Scale down threshold must be less than scale up threshold';
+        }
+
+        if (!formData.evaluationPeriod || formData.evaluationPeriod < 1 || formData.evaluationPeriod > 60) {
+          newErrors.evaluationPeriod = 'Evaluation period must be between 1-60 minutes';
+        }
+
+        if (!formData.groupName.trim()) {
+          newErrors.groupName = 'Group name is required when auto-scaling is enabled';
+        }
       }
 
       // Concurrency Auto-Scaling validation (only when toggle is ON)
@@ -1190,6 +1245,208 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         <p className="text-xs text-gray-500 mt-1">
                           Maximum simultaneous calls
                         </p>
+                      </div>
+
+                      {/* Concurrency Auto-Scaling Toggle */}
+                      <div className="md:col-span-2">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Concurrency Auto-Scaling
+                            </label>
+                            <p className="text-xs text-gray-500">
+                              Automatically adjust concurrent calls based on performance metrics
+                            </p>
+                          </div>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (formData.ivr) {
+                                  setFormData(prev => ({ ...prev, autoScalingEnabled: !prev.autoScalingEnabled }));
+                                }
+                              }}
+                              disabled={!formData.ivr}
+                              className={`
+                                relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                                ${formData.autoScalingEnabled 
+                                  ? 'bg-blue-600' 
+                                  : formData.ivr 
+                                    ? 'bg-gray-200' 
+                                    : 'bg-gray-100 cursor-not-allowed'
+                                }
+                              `}
+                              title={!formData.ivr ? "Please select an IVR first to enable auto-scaling" : ""}
+                            >
+                              <span
+                                className={`
+                                  inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200
+                                  ${formData.autoScalingEnabled ? 'translate-x-6' : 'translate-x-1'}
+                                `}
+                              />
+                            </button>
+                            {!formData.ivr && (
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                Please select an IVR first to enable auto-scaling
+                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Auto-Scaling Configuration Fields */}
+                        {formData.autoScalingEnabled && (
+                          <div className="border-2 border-blue-200 rounded-lg p-6 bg-blue-50/30 space-y-6">
+                            <h4 className="text-sm font-medium text-blue-900 mb-4">Auto-Scaling Configuration</h4>
+                            
+                            {/* Row 1: Min/Max Concurrency */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label htmlFor="min-concurrency" className="block text-sm font-medium text-gray-700 mb-2">
+                                  Minimum Concurrency *
+                                </label>
+                                <input
+                                  id="min-concurrency"
+                                  type="number"
+                                  min="1"
+                                  max="100"
+                                  value={formData.minConcurrency}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, minConcurrency: parseInt(e.target.value) || 1 }))}
+                                  className={`form-input ${getError('minConcurrency') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                  aria-describedby={getError('minConcurrency') ? "min-concurrency-error" : undefined}
+                                />
+                                {getError('minConcurrency') && <p id="min-concurrency-error" className="text-red-500 text-sm mt-1">{getError('minConcurrency')}</p>}
+                              </div>
+
+                              <div>
+                                <label htmlFor="max-concurrency" className="block text-sm font-medium text-gray-700 mb-2">
+                                  Maximum Concurrency *
+                                </label>
+                                <input
+                                  id="max-concurrency"
+                                  type="number"
+                                  min="1"
+                                  max="100"
+                                  value={formData.maxConcurrency}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, maxConcurrency: parseInt(e.target.value) || 1 }))}
+                                  className={`form-input ${getError('maxConcurrency') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                  aria-describedby={getError('maxConcurrency') ? "max-concurrency-error" : undefined}
+                                />
+                                {getError('maxConcurrency') && <p id="max-concurrency-error" className="text-red-500 text-sm mt-1">{getError('maxConcurrency')}</p>}
+                              </div>
+                            </div>
+
+                            {/* Row 2: Target Answer Rate */}
+                            <div>
+                              <label htmlFor="target-answer-rate" className="block text-sm font-medium text-gray-700 mb-2">
+                                Target Answer Rate (%) *
+                              </label>
+                              <input
+                                id="target-answer-rate"
+                                type="number"
+                                min="1"
+                                max="100"
+                                value={formData.targetAnswerRate}
+                                onChange={(e) => setFormData(prev => ({ ...prev, targetAnswerRate: parseInt(e.target.value) || 0 }))}
+                                className={`form-input ${getError('targetAnswerRate') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                placeholder="70"
+                                aria-describedby={getError('targetAnswerRate') ? "target-answer-rate-error" : undefined}
+                              />
+                              {getError('targetAnswerRate') && <p id="target-answer-rate-error" className="text-red-500 text-sm mt-1">{getError('targetAnswerRate')}</p>}
+                              <p className="text-xs text-gray-500 mt-1">
+                                Desired percentage of calls that should be answered
+                              </p>
+                            </div>
+
+                            {/* Row 3: Scale Up/Down Thresholds */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label htmlFor="scale-up-threshold" className="block text-sm font-medium text-gray-700 mb-2">
+                                  Scale Up Threshold (%) *
+                                </label>
+                                <input
+                                  id="scale-up-threshold"
+                                  type="number"
+                                  min="1"
+                                  max="100"
+                                  value={formData.scaleUpThreshold}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, scaleUpThreshold: parseInt(e.target.value) || 0 }))}
+                                  className={`form-input ${getError('scaleUpThreshold') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                  placeholder="80"
+                                  aria-describedby={getError('scaleUpThreshold') ? "scale-up-threshold-error" : undefined}
+                                />
+                                {getError('scaleUpThreshold') && <p id="scale-up-threshold-error" className="text-red-500 text-sm mt-1">{getError('scaleUpThreshold')}</p>}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Answer rate above this triggers scaling up
+                                </p>
+                              </div>
+
+                              <div>
+                                <label htmlFor="scale-down-threshold" className="block text-sm font-medium text-gray-700 mb-2">
+                                  Scale Down Threshold (%) *
+                                </label>
+                                <input
+                                  id="scale-down-threshold"
+                                  type="number"
+                                  min="1"
+                                  max="100"
+                                  value={formData.scaleDownThreshold}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, scaleDownThreshold: parseInt(e.target.value) || 0 }))}
+                                  className={`form-input ${getError('scaleDownThreshold') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                  placeholder="60"
+                                  aria-describedby={getError('scaleDownThreshold') ? "scale-down-threshold-error" : undefined}
+                                />
+                                {getError('scaleDownThreshold') && <p id="scale-down-threshold-error" className="text-red-500 text-sm mt-1">{getError('scaleDownThreshold')}</p>}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Answer rate below this triggers scaling down
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Row 4: Evaluation Period and Group Name */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label htmlFor="evaluation-period" className="block text-sm font-medium text-gray-700 mb-2">
+                                  Evaluation Period (minutes) *
+                                </label>
+                                <input
+                                  id="evaluation-period"
+                                  type="number"
+                                  min="1"
+                                  max="60"
+                                  value={formData.evaluationPeriod}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, evaluationPeriod: parseInt(e.target.value) || 1 }))}
+                                  className={`form-input ${getError('evaluationPeriod') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                  placeholder="5"
+                                  aria-describedby={getError('evaluationPeriod') ? "evaluation-period-error" : undefined}
+                                />
+                                {getError('evaluationPeriod') && <p id="evaluation-period-error" className="text-red-500 text-sm mt-1">{getError('evaluationPeriod')}</p>}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Time window for performance evaluation
+                                </p>
+                              </div>
+
+                              <div>
+                                <label htmlFor="group-name" className="block text-sm font-medium text-gray-700 mb-2">
+                                  Group Name *
+                                </label>
+                                <input
+                                  id="group-name"
+                                  type="text"
+                                  value={formData.groupName}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, groupName: e.target.value }))}
+                                  className={`form-input ${getError('groupName') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                  placeholder="Enter group name"
+                                  aria-describedby={getError('groupName') ? "group-name-error" : undefined}
+                                />
+                                {getError('groupName') && <p id="group-name-error" className="text-red-500 text-sm mt-1">{getError('groupName')}</p>}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Logical grouping for auto-scaling management
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
