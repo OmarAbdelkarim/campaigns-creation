@@ -473,7 +473,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
           newErrors['autoScaling.concurrentCallsPerOnlineAgent'] = 'Concurrent Calls per Online Agent must be between 1 and 100';
         }
       }
-
+    }
 
 
     if (step === 2) {
