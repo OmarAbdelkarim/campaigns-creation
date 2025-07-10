@@ -766,7 +766,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden min-w-0">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-heading-2">Create New Campaign</h2>
           <button
@@ -778,11 +778,11 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
           </button>
         </div>
 
-        <div className="overflow-y-auto overflow-x-hidden max-h-[calc(90vh-140px)]">
+        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="p-6">
             <StepIndicator currentStep={currentStep} />
 
-            <form onSubmit={handleSubmit} className="space-y-8 min-w-0">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {currentStep === 1 && (
                 <div className="space-y-8">
                   {/* Basic Information Section */}
@@ -792,7 +792,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       Basic Information
                     </h3>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label htmlFor="campaign-name" className="block text-sm font-medium text-gray-700 mb-2">
                           Campaign Name
@@ -802,7 +802,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           type="text"
                           value={formData.name}
                           onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                          className="form-input w-full min-w-0"
+                          className="form-input"
                           placeholder="Enter campaign name"
                           aria-describedby={getError('name') ? "name-error" : undefined}
                         />
@@ -828,54 +828,50 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           <button
                             type="button"
                             onClick={() => setIsPhoneNumberDropdownOpen(!isPhoneNumberDropdownOpen)}
-                            className={`w-full form-input text-left flex items-center justify-between min-w-0 ${
+                            className={`w-full form-input text-left flex items-center justify-between ${
                               getError('phoneNumber') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                             }`}
                             aria-describedby={getError('phoneNumber') ? "phone-number-error" : undefined}
                           >
-                            <div className="flex items-center min-w-0 flex-1">
+                            <div className="flex items-center">
                               <span className={selectedPhoneNumber ? 'text-gray-900' : 'text-gray-400'}>
                                 {selectedPhoneNumber ? (
-                                  <div className="flex items-center min-w-0">
+                                  <div className="flex items-center">
                                     <span className="text-lg mr-2">{selectedPhoneNumber.flag}</span>
-                                    <span className="font-medium truncate">{selectedPhoneNumber.formatted}</span>
+                                    <span className="font-medium">{selectedPhoneNumber.formatted}</span>
                                   </div>
                                 ) : (
                                   'Select phone number'
                                 )}
                               </span>
                             </div>
-                            <div className="flex-shrink-0 ml-2">
-                              {isPhoneNumberDropdownOpen ? (
+                            {isPhoneNumberDropdownOpen ? (
                               <ChevronUp className="w-4 h-4 text-gray-400" />
                             ) : (
                               <ChevronDown className="w-4 h-4 text-gray-400" />
                             )}
-                            </div>
                           </button>
 
                           {isPhoneNumberDropdownOpen && (
-                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto min-w-0">
+                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                               {PHONE_NUMBERS.map((phone, index) => (
                                 <button
                                   key={phone.id}
                                   type="button"
                                   onClick={() => handlePhoneNumberSelect(phone.id)}
-                                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 min-w-0 ${
+                                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
                                     index !== PHONE_NUMBERS.length - 1 ? 'border-b border-gray-100' : ''
                                   } ${
                                     formData.phoneNumber === phone.id ? 'bg-blue-50 text-blue-700' : ''
                                   }`}
                                 >
-                                  <div className="flex items-center min-w-0 flex-1">
+                                  <div className="flex items-center">
                                     <span className="text-lg mr-3">{phone.flag}</span>
-                                    <span className="font-medium truncate">{phone.formatted}</span>
+                                    <span className="font-medium">{phone.formatted}</span>
                                   </div>
-                                  <div className="flex-shrink-0">
-                                    {formData.phoneNumber === phone.id && (
+                                  {formData.phoneNumber === phone.id && (
                                     <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                                   )}
-                                  </div>
                                 </button>
                               ))}
                             </div>
@@ -897,7 +893,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     </h3>
 
                     {/* Row 1: IVR (left) and Concurrency (right) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* IVR Selection */}
                       <div>
                         <label htmlFor="ivr-select" className="block text-sm font-medium text-gray-700 mb-2">
@@ -910,7 +906,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           id="ivr-select"
                           value={formData.ivr}
                           onChange={(e) => handleIvrChange(e.target.value)}
-                          className={`form-select h-12 w-full min-w-0 ${
+                          className={`form-select h-12 ${
                             getError('ivr') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                           }`}
                           aria-describedby={getError('ivr') ? "ivr-error" : undefined}
@@ -940,7 +936,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           max="100"
                           value={formData.concurrency}
                           onChange={(e) => setFormData(prev => ({ ...prev, concurrency: parseInt(e.target.value) || 1 }))}
-                          className="form-input h-12 w-full min-w-0"
+                          className="form-input h-12"
                           aria-describedby={getError('concurrency') ? "concurrency-error" : undefined}
                         />
                         {getError('concurrency') && <p id="concurrency-error" className="text-red-500 text-sm mt-1">{getError('concurrency')}</p>}
@@ -951,7 +947,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     </div>
 
                     {/* Row 2: Maximum Tries (left) and Retry Interval (right) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Maximum Tries */}
                       <div>
                         <label htmlFor="max-tries" className="block text-sm font-medium text-gray-700 mb-2">
@@ -964,7 +960,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           max="10"
                           value={formData.maxTries}
                           onChange={(e) => setFormData(prev => ({ ...prev, maxTries: parseInt(e.target.value) || 1 }))}
-                          className="form-input h-12 w-full min-w-0"
+                          className="form-input h-12"
                           aria-describedby={getError('maxTries') ? "max-tries-error" : undefined}
                         />
                         {getError('maxTries') && <p id="max-tries-error" className="text-red-500 text-sm mt-1">{getError('maxTries')}</p>}
@@ -982,7 +978,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           error={getError('retryInterval')}
                           helperText="Time to wait between retry attempts"
                           required
-                          className="min-w-0"
                         />
                       </div>
                     </div>
@@ -1078,7 +1073,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                   </h3>
 
                   {/* Campaign Duration */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <DatePicker
                       value={formData.startDate}
                       onChange={(value) => {
@@ -1103,7 +1098,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       helperText="Campaign will begin on this date"
                       required
                       minDate={getTodayDate()}
-                      className="min-w-0"
                     />
 
                     <DatePicker
@@ -1115,7 +1109,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       required
                       minDate={formData.startDate || getTodayDate()}
                       maxDate={formData.startDate ? addOneYear(formData.startDate) : undefined}
-                      className="min-w-0"
                     />
                   </div>
 
@@ -1129,9 +1122,9 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setIsTimezoneDropdownOpen(!isTimezoneDropdownOpen)}
-                        className="w-full form-input text-left flex items-center justify-between min-w-0"
+                        className="w-full form-input text-left flex items-center justify-between"
                       >
-                        <span className="flex-1 min-w-0 truncate">
+                        <span>
                           {TIMEZONES.find(tz => tz.value === selectedTimezone)?.label || selectedTimezone}
                           {currentTimes[selectedTimezone] && (
                             <span className="ml-2 text-gray-500 font-mono">
@@ -1139,28 +1132,26 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                             </span>
                           )}
                         </span>
-                        <div className="flex-shrink-0 ml-2">
-                          {isTimezoneDropdownOpen ? (
+                        {isTimezoneDropdownOpen ? (
                           <ChevronUp className="w-4 h-4 text-gray-400" />
                         ) : (
                           <ChevronDown className="w-4 h-4 text-gray-400" />
                         )}
-                        </div>
                       </button>
 
                       {isTimezoneDropdownOpen && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto min-w-0">
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                           {TIMEZONES.map(timezone => (
                             <button
                               key={timezone.value}
                               type="button"
                               onClick={() => handleTimezoneSelect(timezone.value)}
-                              className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between min-w-0 ${
+                              className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between ${
                                 selectedTimezone === timezone.value ? 'bg-blue-50 text-blue-700' : ''
                               }`}
                             >
-                              <span className="flex-1 min-w-0 truncate">{timezone.label}</span>
-                              <span className="text-gray-500 font-mono text-sm flex-shrink-0 ml-2">
+                              <span>{timezone.label}</span>
+                              <span className="text-gray-500 font-mono text-sm">
                                 {currentTimes[timezone.value]}
                               </span>
                             </button>
@@ -1180,12 +1171,12 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
                       {/* Date Range Info */}
                       {formData.startDate && formData.endDate && (
-                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg min-w-0">
+                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                           <div className="flex items-start space-x-2">
                             <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-blue-800 min-w-0">
+                            <div className="text-sm text-blue-800">
                               <p className="font-medium mb-1">Schedule automatically updated for date range</p>
-                              <p className="text-blue-700 break-words">
+                              <p className="text-blue-700">
                                 Campaign runs from{' '}
                                 <span className="font-medium">
                                   {new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', {
@@ -1223,9 +1214,9 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
                           return (
                             <div key={day.key} className="space-y-2">
-                              <div className="flex items-center justify-between min-w-0 gap-4">
+                              <div className="flex items-center justify-between">
                                 {/* Day name and checkbox */}
-                                <div className="flex items-center min-w-0 flex-shrink-0">
+                                <div className="flex items-center min-w-[120px]">
                                   <input
                                     type="checkbox"
                                     id={`schedule-${day.key}`}
@@ -1250,13 +1241,13 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                   >
                                     {day.label}
                                     {isDisabledByDateRange && (
-                                      <span className="ml-2 text-xs text-gray-400 whitespace-nowrap">(not in date range)</span>
+                                      <span className="ml-2 text-xs text-gray-400">(not in date range)</span>
                                     )}
                                   </label>
                                 </div>
 
                                 {/* Enhanced Time range inputs */}
-                                <div className="flex items-center space-x-3 flex-shrink-0">
+                                <div className="flex items-center space-x-3">
                                   <TimeSlotInput
                                     dayKey={day.key}
                                     type="start"
@@ -1266,7 +1257,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     errors={hasAttemptedSubmit ? submitErrors : stepErrors}
                                   />
                                   
-                                  <span className="text-gray-400 text-sm font-medium px-1 whitespace-nowrap">to</span>
+                                  <span className="text-gray-400 text-sm font-medium px-2">to</span>
                                   
                                   <TimeSlotInput
                                     dayKey={day.key}
@@ -1305,8 +1296,8 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
               )}
 
               {/* Form Actions */}
-              <div className="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 gap-4 min-w-0">
-                <div className="flex items-center space-x-4 order-2 sm:order-1">
+              <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                <div className="flex items-center space-x-4">
                   {currentStep > 1 && (
                     <button
                       type="button"
@@ -1319,7 +1310,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                   )}
                 </div>
 
-                <div className="flex items-center space-x-4 order-1 sm:order-2">
+                <div className="flex items-center space-x-4">
                   <button
                     type="button"
                     onClick={onClose}
