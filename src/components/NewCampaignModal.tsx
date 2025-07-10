@@ -1169,21 +1169,14 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                   {new Date(formData.endDate + 'T00:00:00').toLocaleDateString('en-US', {
                                     weekday: 'long',
                                     month: 'short',
-                              <p className="font-medium mb-1">Campaign Outbound Calls Management</p>
-                              <p className="text-blue-700 mb-2">
-                                The number of concurrent calls in your campaign is automatically calculated based on:
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
                               </p>
-                              <ul className="text-xs text-blue-600 space-y-1 mb-2">
-                                <li>• The number of online agents in your selected group</li>
-                                <li>• The "Concurrent Calls per Online Agent" setting</li>
-                              </ul>
-                              <div className="text-xs text-blue-600">
-                                <p className="font-medium mb-1">Example:</p>
-                                <p className="mb-1">If your group has 2 online agents and you set "Concurrent Calls per Online Agent" to 1:</p>
-                                <p className="font-mono bg-blue-100 px-2 py-1 rounded">
-                                  Total concurrent calls = 2 agents × 1 call per agent = 2 concurrent calls
-                                </p>
-                              </div>
+                              <p className="text-xs text-blue-600 mt-1">
+                                Only days within this range are enabled and selected below.
+                              </p>
                             </div>
                           </div>
                         </div>
