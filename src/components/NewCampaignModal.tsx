@@ -931,7 +931,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                             `}
                           />
                         </button>
-                      <h4 className="text-sm font-medium text-gray-900">Advanced Concurrency Settings</h4>
+                      </div>
                       
                       {/* IVR Required Message */}
                       {!formData.ivr && (
