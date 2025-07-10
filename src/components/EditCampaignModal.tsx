@@ -295,19 +295,6 @@ export const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
       newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
     }
 
-    // Validate Advanced Configurations (Concurrency Auto-Scaling) when enabled
-    if (formData.autoScaling?.enabled) {
-      if (!formData.autoScaling.groupName?.trim()) {
-        newErrors['autoScaling.groupName'] = 'Group Name is required when auto-scaling is enabled';
-      }
-
-      if (!formData.autoScaling.concurrentCallsPerOnlineAgent || 
-          formData.autoScaling.concurrentCallsPerOnlineAgent < 1 || 
-          formData.autoScaling.concurrentCallsPerOnlineAgent > 100) {
-        newErrors['autoScaling.concurrentCallsPerOnlineAgent'] = 'Concurrent Calls per Online Agent must be between 1 and 100';
-      }
-    }
-
     const hasEnabledDays = Object.values(formData.schedule).some(day => day.enabled);
     if (!hasEnabledDays) {
       newErrors.schedule = 'At least one day must be selected';
