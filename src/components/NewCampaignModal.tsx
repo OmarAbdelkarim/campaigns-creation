@@ -227,10 +227,12 @@ const getDaysInDateRange = (startDate: string, endDate: string): Set<number> => 
     return new Set();
   }
 };
-
-const isDayInRange = (dayIndex: number, startDate: string, endDate: string): boolean => {
+// Helper function to get filtered weekdays that exist within the date range
+const getFilteredWeekdays = (startDate: string, endDate: string) => {
+  if (!startDate || !endDate) return WEEKDAYS;
+  
   const daysInRange = getDaysInDateRange(startDate, endDate);
-  return daysInRange.has(dayIndex);
+  return WEEKDAYS.filter(day => daysInRange.has(day.dayIndex));
 };
 
 // Memoized TimeSlotInput component
@@ -668,6 +670,16 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
         }, {})
       }));
     }
+  } else {
+    // Reset schedule when dates are cleared
+    setFormData(prev => ({
+      ...prev,
+      schedule: WEEKDAYS.reduce((acc, day) => ({
+        ...acc,
+        [day.key]: { enabled: false, startTime: '09:00', endTime: '17:00' }
+      }), {})
+    }));
+  }
   }, [formData.startDate, formData.endDate]);
 
   useEffect(() => {
@@ -1218,7 +1230,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           <div className="flex items-start space-x-2">
                             <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                             <div className="text-sm text-blue-800">
-                              <p className="font-medium mb-1">Schedule automatically updated for date range</p>
+                              <p className="font-medium mb-1">Weekdays filtered for selected date range</p>
                               <p className="text-blue-700">
                                 Campaign runs from{' '}
                                 <span className="font-medium">
@@ -1240,7 +1252,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                 </span>
                               </p>
                               <p className="text-xs text-blue-600 mt-1">
-                                Only days within this range are enabled and selected below.
+                                Only weekdays that occur within this range are shown below.
                               </p>
                             </div>
                           </div>
@@ -1250,78 +1262,101 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       <div className="space-y-4">
                         {WEEKDAYS.map(day => {
                           const isDayInDateRange = formData.startDate && formData.endDate 
-                            ? isDayInRange(day.dayIndex, formData.startDate, formData.endDate)
-                            : true;
-                          
-                          const isDisabledByDateRange = formData.startDate && formData.endDate && !isDayInDateRange;
-                          const hasScheduleError = Boolean(getError(`schedule-${day.key}`));
-
-                          const checkboxClasses = isDisabledByDateRange 
-                            ? 'w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 text-gray-300 cursor-not-allowed' 
-                            : 'w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 text-blue-600 cursor-pointer';
-
-                          const labelClasses = isDisabledByDateRange 
-                            ? 'ml-3 text-sm font-medium select-none text-gray-400 cursor-not-allowed' 
-                            : formData.schedule[day.key].enabled
-                              ? 'ml-3 text-sm font-medium select-none text-gray-900 cursor-pointer'
-                              : 'ml-3 text-sm font-medium select-none text-gray-600 cursor-pointer';
-
+                      {(() => {
+                        const filteredWeekdays = getFilteredWeekdays(formData.startDate, formData.endDate);
+                        
+                        if (filteredWeekdays.length === 0 && formData.startDate && formData.endDate) {
                           return (
-                            <div key={day.key} className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                {/* Day name and checkbox */}
-                                <div className="flex items-center min-w-[120px]">
-                                  <input
-                                    type="checkbox"
-                                    id={`schedule-${day.key}`}
-                                    checked={formData.schedule[day.key].enabled}
-                                    onChange={(e) => handleScheduleChange(day.key, 'enabled', e.target.checked)}
-                                    disabled={isDisabledByDateRange}
-                                    className={checkboxClasses}
-                                  />
-                                  <label 
-                                    htmlFor={`schedule-${day.key}`} 
-                                    className={labelClasses}
-                                  >
-                                    {day.label}
-                                    {isDisabledByDateRange && (
-                                      <span className="ml-2 text-xs text-gray-400">(not in date range)</span>
-                                    )}
-                                  </label>
-                                </div>
-
-                                {/* Enhanced Time range inputs */}
-                                <div className="flex items-center space-x-3">
-                                  <TimeSlotInput
-                                    dayKey={day.key}
-                                    type="start"
-                                    value={formData.schedule[day.key].startTime}
-                                    enabled={formData.schedule[day.key].enabled && !isDisabledByDateRange}
-                                    onChange={(value) => handleScheduleChange(day.key, 'startTime', value)}
-                                    hasError={hasScheduleError}
-                                  />
-                                  
-                                  <span className="text-gray-400 text-sm font-medium px-2">to</span>
-                                  
-                                  <TimeSlotInput
-                                    dayKey={day.key}
-                                    type="end"
-                                    value={formData.schedule[day.key].endTime}
-                                    enabled={formData.schedule[day.key].enabled && !isDisabledByDateRange}
-                                    onChange={(value) => handleScheduleChange(day.key, 'endTime', value)}
-                                    hasError={hasScheduleError}
-                                  />
+                            <div className="text-center py-8">
+                              <div className="flex flex-col items-center space-y-3">
+                                <Calendar className="w-12 h-12 text-gray-400" />
+                                <div className="text-gray-600">
+                                  <p className="font-medium">No weekdays available</p>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    The selected date range does not contain any complete weekdays.
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-2">
+                                    Please adjust your start and end dates to include at least one full day.
+                                  </p>
                                 </div>
                               </div>
-                              
-                              {/* Error message for this specific day */}
-                              {hasScheduleError && (
-                                <p className="text-red-500 text-xs ml-7">{getError(`schedule-${day.key}`)}</p>
-                              )}
                             </div>
                           );
-                        })}
-                      </div>
+                        }
+                        
+                        if (filteredWeekdays.length === 0) {
+                          return (
+                            <div className="text-center py-8">
+                              <div className="flex flex-col items-center space-y-3">
+                                <Calendar className="w-12 h-12 text-gray-400" />
+                                <div className="text-gray-600">
+                                  <p className="font-medium">Select campaign dates</p>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    Choose start and end dates above to configure your weekly schedule.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <div className="space-y-4">
+                            {filteredWeekdays.map(day => (
+                              <div key={day.key} className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  {/* Day name and checkbox */}
+                                  <div className="flex items-center min-w-[120px]">
+                                    <input
+                                      type="checkbox"
+                                      id={`schedule-${day.key}`}
+                                      checked={formData.schedule[day.key].enabled}
+                                      onChange={(e) => handleScheduleChange(day.key, 'enabled', e.target.checked)}
+                                      className="w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 text-blue-600 cursor-pointer"
+                                    />
+                                    <label 
+                                      htmlFor={`schedule-${day.key}`} 
+                                      className={`ml-3 text-sm font-medium select-none cursor-pointer ${
+                                        formData.schedule[day.key].enabled
+                                          ? 'text-gray-900'
+                                          : 'text-gray-600'
+                                      }`}
+                                    >
+                                      {day.label}
+                                    </label>
+                                  </div>
+
+                                  {/* Time range inputs */}
+                                  <div className="flex items-center space-x-3">
+                                    <TimeSlotInput
+                                      dayKey={day.key}
+                                      type="start"
+                                      value={formData.schedule[day.key].startTime}
+                                      enabled={formData.schedule[day.key].enabled}
+                                      onChange={(value) => handleScheduleChange(day.key, 'startTime', value)}
+                                    />
+                                    
+                                    <span className="text-gray-400 text-sm font-medium px-2">to</span>
+                                    
+                                    <TimeSlotInput
+                                      dayKey={day.key}
+                                      type="end"
+                                      value={formData.schedule[day.key].endTime}
+                                      enabled={formData.schedule[day.key].enabled}
+                                      onChange={(value) => handleScheduleChange(day.key, 'endTime', value)}
+                                    />
+                                  </div>
+                                </div>
+                                
+                                {/* Error message for this specific day */}
+                                {getError(`schedule-${day.key}`) && (
+                                  <p className="text-red-500 text-xs ml-7">{getError(`schedule-${day.key}`)}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                     
                     {getError('schedule') && <p className="text-red-500 text-sm">{getError('schedule')}</p>}
@@ -1329,9 +1364,9 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-gray-600">
                         {formData.startDate && formData.endDate ? (
-                          'Days are automatically selected based on your campaign date range. Only days that occur within the selected dates are enabled.'
+                          'Only weekdays that occur within your selected campaign date range are displayed. You can customize the time slots for each available day.'
                         ) : (
-                          'Select campaign start and end dates above to automatically enable relevant days. You can then customize the time slots for each enabled day.'
+                          'Select campaign start and end dates above to see available weekdays. You can then customize the time slots for each day.'
                         )}
                       </p>
                     </div>
