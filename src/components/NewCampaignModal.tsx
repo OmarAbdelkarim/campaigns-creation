@@ -922,7 +922,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                             <Settings className="w-4 h-4 text-blue-600" />
-                          </div>
+                            <span>Concurrency Auto-Scaling <span className="text-gray-500 font-normal">(optional)</span></span>
                           <div className="text-left">
                             <h4 className="text-sm font-medium text-gray-900">Advanced Configurations</h4>
                             <p className="text-xs text-gray-500">Optional settings for advanced campaign management</p>
@@ -1259,8 +1259,8 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         {formData.startDate && formData.endDate ? (
                           'Days are automatically selected based on your campaign date range. Only days that occur within the selected dates are enabled.'
                         ) : (
-                          'Select campaign start and end dates above to automatically enable relevant days. You can then customize the time slots for each enabled day.'
-                        )}
+                      <p className="text-xs text-gray-600">
+                        Auto-scale the number of concurrent outbound calls based on the number of online agents
                       </p>
                     </div>
                   </div>
