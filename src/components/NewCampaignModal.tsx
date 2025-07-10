@@ -732,6 +732,649 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                             <Phone className="w-4 h-4 mr-1" />
                             Outbound Caller ID
                             <div className="relative ml-2 group">
+                              <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                              {/* Tooltip for disabled state */}
+                              {!formData.ivr && (
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                  IVR selection required: Please select an IVR in the configuration above to enable concurrency auto-scaling options.
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </label>
+                        <div className="relative phone-number-dropdown-container">
+                          <button
+                            type="button"
+                            onClick={() => setIsPhoneNumberDropdownOpen(!isPhoneNumberDropdownOpen)}
+                            className={`w-full form-input text-left flex items-center justify-between ${
+                              getError('phoneNumber') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                            }`}
+                            aria-describedby={getError('phoneNumber') ? "phone-number-error" : undefined}
+                          >
+                            <div className="flex items-center">
+                              <span className={selectedPhoneNumber ? 'text-gray-900' : 'text-gray-400'}>
+                                {selectedPhoneNumber ? (
+                                  <div className="flex items-center">
+                                    <span className="text-lg mr-2">{selectedPhoneNumber.flag}</span>
+                                    <span className="font-medium">{selectedPhoneNumber.formatted}</span>
+                                  </div>
+                                ) : (
+                                  'Select phone number'
+                                )}
+                              </span>
+                            </div>
+                            {isPhoneNumberDropdownOpen ? (
+                              <ChevronUp className="w-4 h-4 text-gray-400" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-gray-400" />
+                            )}
+                          </button>
+
+                          {isPhoneNumberDropdownOpen && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                              {PHONE_NUMBERS.map((phone, index) => {
+                                const isSelected = formData.phoneNumber === phone.id;
+                                const isLast = index === PHONE_NUMBERS.length - 1;
+                                const buttonClasses = `w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
+                                  !isLast ? 'border-b border-gray-100' : ''
+                                } ${
+                                  isSelected ? 'bg-blue-50 text-blue-700' : ''
+                                }`;
+
+                                return (
+                                  <button
+                                    key={phone.id}
+                                    type="button"
+                                    onClick={() => handlePhoneNumberSelect(phone.id)}
+                                    className={buttonClasses}
+                                  >
+                                    <div className="flex items-center">
+                                      <span className="text-lg mr-3">{phone.flag}</span>
+                                      <span className="font-medium">{phone.formatted}</span>
+                                    </div>
+                                    {isSelected && (
+                                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        {getError('phoneNumber') && <p id="phone-number-error" className="text-red-500 text-sm mt-1">{getError('phoneNumber')}</p>}
+                        <p className="text-xs text-gray-500 mt-1">
+                          This number will be displayed to call recipients as the caller ID
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Campaign Configurations Section */}
+                  <div className="space-y-6">
+                    <h3 className="text-heading-3 flex items-center">
+                      <Clock className="w-5 h-5 mr-2 text-blue-600" />
+                      Campaign Configurations
+                    </h3>
+
+                    {/* Row 1: IVR (left) and Concurrency (right) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* IVR Selection */}
+                      <div>
+                        <label htmlFor="ivr-select" className="block text-sm font-medium text-gray-700 mb-2">
+                          <div className="flex items-center">
+                            <Workflow className="w-4 h-4 mr-1" />
+                            IVR
+                          </div>
+                        </label>
+                        <select
+                          id="ivr-select"
+                          value={formData.ivr}
+                          onChange={(e) => handleFormDataChange('ivr', e.target.value)}
+                          className={`form-select h-12 ${
+                            getError('ivr') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                          }`}
+                          aria-describedby={getError('ivr') ? "ivr-error" : undefined}
+                        >
+                          <option value="">Select IVR</option>
+                          {IVR_OPTIONS.map(ivr => (
+                            <option key={ivr} value={ivr}>{ivr}</option>
+                          ))}
+                        </select>
+                        {getError('ivr') && (
+                          <p id="ivr-error" className="text-red-500 text-sm mt-1">{getError('ivr')}</p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Interactive Voice Response system for call handling
+                        </p>
+                      </div>
+
+                      {/* Concurrency */}
+                      <div>
+                        <label htmlFor="concurrency" className="block text-sm font-medium text-gray-700 mb-2">
+                          Concurrency
+                        </label>
+                        <input
+                          id="concurrency"
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={formData.concurrency}
+                          onChange={(e) => handleFormDataChange('concurrency', parseInt(e.target.value) || 1)}
+                          className="form-input h-12"
+                          aria-describedby={getError('concurrency') ? "concurrency-error" : undefined}
+                        />
+                        {getError('concurrency') && <p id="concurrency-error" className="text-red-500 text-sm mt-1">{getError('concurrency')}</p>}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Maximum simultaneous calls
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Maximum Tries (left) and Retry Interval (right) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Maximum Tries */}
+                      <div>
+                        <label htmlFor="max-tries" className="block text-sm font-medium text-gray-700 mb-2">
+                          Maximum Tries
+                        </label>
+                        <input
+                          id="max-tries"
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={formData.maxTries}
+                          onChange={(e) => handleFormDataChange('maxTries', parseInt(e.target.value) || 1)}
+                          className="form-input h-12"
+                          aria-describedby={getError('maxTries') ? "max-tries-error" : undefined}
+                        />
+                        {getError('maxTries') && <p id="max-tries-error" className="text-red-500 text-sm mt-1">{getError('maxTries')}</p>}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Number of call attempts per contact
+                        </p>
+                      </div>
+
+                      {/* Retry Interval with Time Picker */}
+                      <div>
+                        <TimePicker
+                          value={formData.retryInterval}
+                          onChange={(value) => handleFormDataChange('retryInterval', value)}
+                          label="Retry Interval"
+                          error={getError('retryInterval')}
+                          helperText="Time to wait between retry attempts"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Advanced Configurations Section */}
+                    <div className="border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <Settings className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900">
+                              Advanced Concurrency Settings <span className="text-gray-500 font-normal">(optional)</span>
+                            </h4>
+                            <p className="text-xs text-gray-600 mt-1">
+                              Automate the number of concurrent outbound calls based on the number of online agents
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={() => formData.ivr && setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
+                          className={`
+                            relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                            ${!formData.ivr 
+                              ? 'bg-gray-200 cursor-not-allowed' 
+                              : isAdvancedConfigExpanded 
+                                ? 'bg-blue-600' 
+                                : 'bg-gray-300'
+                            }
+                          `}
+                          disabled={!formData.ivr}
+                          role="switch"
+                          aria-checked={isAdvancedConfigExpanded}
+                          aria-label={!formData.ivr ? "Select an IVR to enable concurrency auto-scaling" : "Toggle concurrency auto-scaling"}
+                        >
+                          <span
+                            className={`
+                              inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out
+                              ${!formData.ivr 
+                                ? 'translate-x-1' 
+                                : isAdvancedConfigExpanded 
+                                  ? 'translate-x-6' 
+                                  : 'translate-x-1'
+                              }
+                            `}
+                          />
+                        </button>
+                      </div>
+                      
+                      {/* IVR Required Message */}
+                      {!formData.ivr && (
+                        <div className="flex items-start space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-amber-800">
+                            <span className="font-medium">IVR selection required:</span> Please select an IVR in the configuration above to enable concurrency auto-scaling options.
+                          </p>
+                        </div>
+                      )}
+
+                      {isAdvancedConfigExpanded && formData.ivr && (
+                        <div className="px-6 pb-6 border-t border-gray-200 bg-gray-50">
+                          <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Group Name Selection */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Group Name
+                              </label>
+                              <div className="relative group-dropdown-container">
+                                <button
+                                  type="button"
+                                  onClick={() => setIsGroupDropdownOpen(!isGroupDropdownOpen)}
+                                  className="w-full form-input text-left flex items-center justify-between"
+                                >
+                                  <span className={selectedGroup ? 'text-gray-900' : 'text-gray-400'}>
+                                    {selectedGroup ? (
+                                      <div className="flex items-center justify-between w-full">
+                                        <span className="font-medium">{selectedGroup.name}</span>
+                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                          {selectedGroup.agentCount} agents
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      'Select group'
+                                    )}
+                                  </span>
+                                  {isGroupDropdownOpen ? (
+                                    <ChevronUp className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
+                                  )}
+                                </button>
+
+                                {isGroupDropdownOpen && (
+                                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleGroupSelect('')}
+                                      className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-500 border-b border-gray-100 transition-colors duration-200"
+                                    >
+                                      No group selected
+                                    </button>
+                                    {activeGroups.map((group, index) => {
+                                      const isSelected = formData.groupName === group.id;
+                                      const isLast = index === activeGroups.length - 1;
+                                      const buttonClasses = `w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
+                                        !isLast ? 'border-b border-gray-100' : ''
+                                      } ${
+                                        isSelected ? 'bg-blue-50 text-blue-700' : ''
+                                      }`;
+
+                                      return (
+                                        <button
+                                          key={group.id}
+                                          type="button"
+                                          onClick={() => handleGroupSelect(group.id)}
+                                          className={buttonClasses}
+                                        >
+                                          <div>
+                                            <div className="font-medium">{group.name}</div>
+                                            <div className="text-xs text-gray-500">
+                                              {group.agentCount} agents
+                                            </div>
+                                          </div>
+                                          {isSelected && (
+                                            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Assign campaign to a specific agent group
+                              </p>
+                            </div>
+
+                            {/* Concurrent Calls per Online Agent */}
+                            <div>
+                              <label htmlFor="concurrent-calls-per-agent" className="block text-sm font-medium text-gray-700 mb-2">
+                                Concurrent Calls per Online Agent
+                              </label>
+                              <input
+                                id="concurrent-calls-per-agent"
+                                type="number"
+                                min="1"
+                                max="50"
+                                value={formData.concurrentCallsPerAgent}
+                                onChange={(e) => handleFormDataChange('concurrentCallsPerAgent', parseInt(e.target.value) || 1)}
+                                className="form-input h-12"
+                                aria-describedby={getError('concurrentCallsPerAgent') ? "concurrent-calls-per-agent-error" : undefined}
+                              />
+                              {getError('concurrentCallsPerAgent') && (
+                                <p id="concurrent-calls-per-agent-error" className="text-red-500 text-sm mt-1">
+                                  {getError('concurrentCallsPerAgent')}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-500 mt-1">
+                                Maximum simultaneous calls per online agent
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Schedule Configuration */}
+              {currentStep === 2 && (
+                <div className="space-y-6">
+                  <h3 className="text-heading-3 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                    Schedule Configuration
+                  </h3>
+
+                  {/* Campaign Duration */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <DatePicker
+                      value={formData.startDate}
+                      onChange={(value) => {
+                        handleFormDataChange('startDate', value);
+                        if (errors.endDate) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.endDate;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      label="Start Date"
+                      error={getError('startDate')}
+                      helperText="Campaign will begin on this date"
+                      required
+                      minDate={getTodayDate()}
+                    />
+
+                    <DatePicker
+                      value={formData.endDate}
+                      onChange={(value) => handleFormDataChange('endDate', value)}
+                      label="End Date"
+                      error={getError('endDate')}
+                      helperText="Campaign will end on this date (max 1 year duration)"
+                      required
+                      minDate={formData.startDate || getTodayDate()}
+                      maxDate={formData.startDate ? addOneYear(formData.startDate) : undefined}
+                    />
+                  </div>
+
+                  {/* Timezone Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Globe className="w-4 h-4 inline mr-1" />
+                      Timezone
+                    </label>
+                    <div className="relative timezone-dropdown-container">
+                      <button
+                        type="button"
+                        onClick={() => setIsTimezoneDropdownOpen(!isTimezoneDropdownOpen)}
+                        className="w-full form-input text-left flex items-center justify-between"
+                      >
+                        <span>
+                          {TIMEZONES.find(tz => tz.value === selectedTimezone)?.label || selectedTimezone}
+                          {currentTimes[selectedTimezone] && (
+                            <span className="ml-2 text-gray-500 font-mono">
+                              ({currentTimes[selectedTimezone]})
+                            </span>
+                          )}
+                        </span>
+                        {isTimezoneDropdownOpen ? (
+                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
+
+                      {isTimezoneDropdownOpen && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {TIMEZONES.map(timezone => {
+                            const isSelected = selectedTimezone === timezone.value;
+                            const buttonClasses = `w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between ${
+                              isSelected ? 'bg-blue-50 text-blue-700' : ''
+                            }`;
+
+                            return (
+                              <button
+                                key={timezone.value}
+                                type="button"
+                                onClick={() => handleTimezoneSelect(timezone.value)}
+                                className={buttonClasses}
+                              >
+                                <span>{timezone.label}</span>
+                                <span className="text-gray-500 font-mono text-sm">
+                                  {currentTimes[timezone.value]}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Weekly Schedule with Date Range Validation */}
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      Weekly Schedule
+                    </label>
+                    
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
+                      {/* Date Range Info */}
+                      {formData.startDate && formData.endDate && (
+                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-start space-x-2">
+                            <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-blue-800">
+                              <p className="font-medium mb-1">Weekdays filtered for selected date range</p>
+                              <p className="text-blue-700">
+                                Campaign runs from{' '}
+                                <span className="font-medium">
+                                  {new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                                {' '}to{' '}
+                                <span className="font-medium">
+                                  {new Date(formData.endDate + 'T00:00:00').toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </p>
+                              <p className="text-xs text-blue-600 mt-1">
+                                Only weekdays that occur within this range are shown below.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-4">
+                        {WEEKDAYS.map(day => {
+                          const isDayInDateRange = formData.startDate && formData.endDate 
+                            ? getDaysInDateRange(formData.startDate, formData.endDate).has(day.dayIndex)
+                            : true;
+                          
+                          if (!isDayInDateRange) return null;
+                          
+                          return (
+                            <div key={day.key} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                {/* Day name and checkbox */}
+                                <div className="flex items-center min-w-[120px]">
+                                  <input
+                                    type="checkbox"
+                                    id={`schedule-${day.key}`}
+                                    checked={formData.schedule[day.key].enabled}
+                                    onChange={(e) => handleScheduleChange(day.key, 'enabled', e.target.checked)}
+                                    className="w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 text-blue-600 cursor-pointer"
+                                  />
+                                  <label 
+                                    htmlFor={`schedule-${day.key}`} 
+                                    className={`ml-3 text-sm font-medium select-none cursor-pointer ${
+                                      formData.schedule[day.key].enabled
+                                        ? 'text-gray-900'
+                                        : 'text-gray-600'
+                                    }`}
+                                  >
+                                    {day.label}
+                                  </label>
+                                </div>
+
+                                {/* Time range inputs */}
+                                <div className="flex items-center space-x-3">
+                                  <TimeSlotInput
+                                    dayKey={day.key}
+                                    type="start"
+                                    value={formData.schedule[day.key].startTime}
+                                    enabled={formData.schedule[day.key].enabled}
+                                    onChange={(value) => handleScheduleChange(day.key, 'startTime', value)}
+                                    hasError={!!getError(`schedule-${day.key}`)}
+                                  />
+                                  
+                                  <span className="text-gray-400 text-sm font-medium px-2">to</span>
+                                  
+                                  <TimeSlotInput
+                                    dayKey={day.key}
+                                    type="end"
+                                    value={formData.schedule[day.key].endTime}
+                                    enabled={formData.schedule[day.key].enabled}
+                                    onChange={(value) => handleScheduleChange(day.key, 'endTime', value)}
+                                    hasError={!!getError(`schedule-${day.key}`)}
+                                  />
+                                </div>
+                              </div>
+                              
+                              {/* Error message for this specific day */}
+                              {getError(`schedule-${day.key}`) && (
+                                <p className="text-red-500 text-xs ml-7">{getError(`schedule-${day.key}`)}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Show message when no days are available */}
+                      {(() => {
+                        const filteredWeekdays = getFilteredWeekdays(formData.startDate, formData.endDate);
+                        
+                        if (filteredWeekdays.length === 0) {
+                          return (
+                            <div className="text-center py-4 mt-4 border-t border-gray-200">
+                              <div className="flex flex-col items-center space-y-3">
+                                <Calendar className="w-12 h-12 text-gray-400" />
+                                <div className="text-gray-600">
+                                  <p className="font-medium">
+                                    {formData.startDate && formData.endDate 
+                                      ? 'No weekdays available' 
+                                      : 'Select campaign dates'
+                                    }
+                                  </p>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    {formData.startDate && formData.endDate 
+                                      ? 'The selected date range does not contain any complete weekdays. Please adjust your start and end dates.'
+                                      : 'Choose start and end dates above to configure your weekly schedule.'
+                                    }
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return null;
+                      })()}
+                    
+                    {getError('schedule') && <p className="text-red-500 text-sm">{getError('schedule')}</p>}
+                    <div className="flex items-start space-x-2">
+                      <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-gray-600">
+                        {formData.startDate && formData.endDate ? (
+                          'Only weekdays that occur within your selected campaign date range are displayed. You can customize the time slots for each available day.'
+                        ) : (
+                          'Select campaign start and end dates above to see available weekdays. You can then customize the time slots for each day.'
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                <div className="flex items-center space-x-4">
+                  {currentStep > 1 && (
+                    <button
+                      type="button"
+                      onClick={handlePrevious}
+                      className="btn-secondary flex items-center"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1" />
+                      Previous
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  
+                  {currentStep < 2 ? (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="btn-primary flex items-center"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                    >
+                      Create Campaign
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+                            <div className="relative ml-2 group">
                             {/* Tooltip for disabled state */}
                             {!formData.ivr && (
                               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
