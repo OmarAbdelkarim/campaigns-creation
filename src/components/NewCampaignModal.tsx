@@ -1009,7 +1009,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                         </span>
                                       </div>
                                     ) : (
-                                      'Select group (optional)'
+                                      'Select group'
                                     )}
                                   </span>
                                   {isGroupDropdownOpen ? (
