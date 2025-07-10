@@ -431,7 +431,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     scaleUpThreshold: 80,
     scaleDownThreshold: 60,
     evaluationPeriod: 5,
-    groupName: ''
     groupName: '',
     concurrentCallsPerAgent: 1
   });
