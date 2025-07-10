@@ -474,56 +474,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
         }
       }
 
-      // Concurrency Auto-Scaling validation (only when toggle is ON)
-      if (formData.concurrencyAutoScaling) {
-        if (!formData.minConcurrency || formData.minConcurrency < 1) {
-          newErrors.minConcurrency = 'Minimum concurrency is required and must be at least 1';
-        }
-        
-        if (!formData.maxConcurrency || formData.maxConcurrency < 1) {
-          newErrors.maxConcurrency = 'Maximum concurrency is required and must be at least 1';
-        }
-        
-        if (formData.minConcurrency && formData.maxConcurrency && formData.minConcurrency >= formData.maxConcurrency) {
-          newErrors.maxConcurrency = 'Maximum concurrency must be greater than minimum concurrency';
-        }
-        
-        if (formData.maxConcurrency && formData.maxConcurrency > 100) {
-          newErrors.maxConcurrency = 'Maximum concurrency cannot exceed 100';
-        }
-        
-        if (!formData.targetAnswerRate || formData.targetAnswerRate < 1 || formData.targetAnswerRate > 100) {
-          newErrors.targetAnswerRate = 'Target answer rate is required and must be between 1-100%';
-        }
-        
-        if (!formData.scaleUpThreshold || formData.scaleUpThreshold < 1 || formData.scaleUpThreshold > 100) {
-          newErrors.scaleUpThreshold = 'Scale up threshold is required and must be between 1-100%';
-        }
-        
-        if (!formData.scaleDownThreshold || formData.scaleDownThreshold < 1 || formData.scaleDownThreshold > 100) {
-          newErrors.scaleDownThreshold = 'Scale down threshold is required and must be between 1-100%';
-        }
-        
-        if (formData.scaleUpThreshold && formData.scaleDownThreshold && formData.scaleDownThreshold >= formData.scaleUpThreshold) {
-          newErrors.scaleDownThreshold = 'Scale down threshold must be less than scale up threshold';
-        }
-        
-        if (!formData.evaluationPeriod || formData.evaluationPeriod < 1 || formData.evaluationPeriod > 60) {
-          newErrors.evaluationPeriod = 'Evaluation period is required and must be between 1-60 minutes';
-        }
-        
-        if (!formData.groupName || !formData.groupName.trim()) {
-          newErrors.groupName = 'Group name is required when auto-scaling is enabled';
-        }
-      }
 
-      if (isAdvancedConfigExpanded) {
-        const concurrentCallsNum = Number(formData.concurrentCallsPerAgent);
-        if (concurrentCallsNum < 1 || concurrentCallsNum > 50) {
-          newErrors.concurrentCallsPerAgent = 'Concurrent calls per agent must be between 1 and 50';
-        }
-      }
-    }
 
     if (step === 2) {
       if (!formData.startDate) {
