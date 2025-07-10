@@ -42,8 +42,6 @@ interface FormData {
   maxTries: number;
   retryInterval: string;
   concurrency: number;
-  autoScalingEnabled: boolean;
-  groupName: string;
   groupName: string;
   concurrentCallsPerAgent: number;
 }
@@ -400,8 +398,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     maxTries: 1,
     retryInterval: '00:00:00',
     concurrency: 1,
-    autoScalingEnabled: false,
-    groupName: ''
     groupName: '',
     concurrentCallsPerAgent: 1
   });
@@ -854,75 +850,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Concurrency Auto-Scaling Section */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">
-                            Concurrency Auto-Scaling
-                          </label>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Automatically adjust concurrency based on demand
-                          </p>
-                        </div>
-                        <div className="relative group">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (formData.ivr) {
-                                setFormData(prev => ({ ...prev, autoScalingEnabled: !prev.autoScalingEnabled }));
-                              }
-                            }}
-                            disabled={!formData.ivr}
-                            className={`
-                              relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                              ${!formData.ivr 
-                                ? 'bg-gray-200 cursor-not-allowed' 
-                                : formData.autoScalingEnabled 
-                                  ? 'bg-blue-600' 
-                                  : 'bg-gray-200 hover:bg-gray-300'
-                              }
-                            `}
-                            aria-describedby="auto-scaling-description"
-                          >
-                            <span
-                              className={`
-                                inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out
-                                ${formData.autoScalingEnabled ? 'translate-x-6' : 'translate-x-1'}
-                              `}
-                            />
-                          </button>
-                          
-                          {/* Tooltip for disabled state */}
-                          {!formData.ivr && (
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                              Select an IVR to enable auto-scaling
-                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Group Name Field - Only show when auto-scaling is enabled */}
-                      {formData.autoScalingEnabled && (
-                        <div className="animate-fade-in">
-                          <label htmlFor="group-name" className="block text-sm font-medium text-gray-700 mb-2">
-                            Group Name
-                          </label>
-                          <input
-                            id="group-name"
-                            type="text"
-                            value={formData.groupName}
-                            onChange={(e) => setFormData(prev => ({ ...prev, groupName: e.target.value }))}
-                            className="form-input"
-                            placeholder="Enter group name"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Name for the auto-scaling group
-                          </p>
-                        </div>
-                      )}
-                    </div>
                     {/* Row 2: Maximum Tries (left) and Retry Interval (right) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Maximum Tries */}
