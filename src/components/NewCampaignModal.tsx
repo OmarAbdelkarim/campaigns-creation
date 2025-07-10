@@ -938,10 +938,12 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         <div className="flex items-start space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                           <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                           <p className="text-sm text-amber-800">
-                            <span className="font-medium">IVR selection required:</span> Please select an IVR in the configuration above to enable concurrency auto-scaling options.
+                          {!formData.ivr && (
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                           </p>
                         </div>
-                      )}
+                            </div>
+                          )}
 
                       {isAdvancedConfigExpanded && formData.ivr && (
                         <div className="px-6 pb-6 border-t border-gray-200 bg-gray-50">
