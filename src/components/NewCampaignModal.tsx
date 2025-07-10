@@ -895,10 +895,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       >
                         <div className="flex items-center space-x-3">
                           <Settings className="w-5 h-5 text-gray-600" />
-                          <span className="text-sm font-medium text-gray-900">Advanced Configurations</span>
-                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                            Optional
-                          </span>
+                          <span className="text-sm font-medium text-gray-900">Concurrency Auto-Scaling <span className="text-gray-500 font-normal">(optional)</span></span>
                         </div>
                         {isAdvancedConfigExpanded ? (
                           <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -906,6 +903,9 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           <ChevronDown className="w-5 h-5 text-gray-400" />
                         )}
                       </button>
+                      <p className="text-xs text-gray-600 mt-1 ml-6">
+                        Auto-scale the number of concurrent outbound calls based on the number of online agents
+                      </p>
 
                       {isAdvancedConfigExpanded && (
                         <div className="px-6 pb-6 border-t border-gray-200 bg-gray-50">
