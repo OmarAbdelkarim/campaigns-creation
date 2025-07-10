@@ -745,7 +745,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       const target = event.target as Element;
       if (!target.closest('.timezone-dropdown-container')) {
         setIsTimezoneDropdownOpen(false);
-      }
+          x: rect.left - 8, // Position to the left of the toggle
       if (!target.closest('.phone-number-dropdown-container')) {
         setIsPhoneNumberDropdownOpen(false);
       }
@@ -766,23 +766,23 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-heading-2">Create New Campaign</h2>
-          <button
+              left: tooltipPosition.x - 120, // Offset to position tooltip to the left
             onClick={onClose}
-            className="icon-button"
+              transform: 'translateY(-100%)'
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="overflow-y-auto overflow-x-hidden max-h-[calc(90vh-140px)] flex-1">
           <div className="p-6">
             <StepIndicator currentStep={currentStep} />
 
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8 min-w-0">
               {currentStep === 1 && (
                 <div className="space-y-8">
                   {/* Basic Information Section */}
@@ -1168,7 +1168,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       Weekly Schedule
                     </label>
                     
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-w-0">
                       {/* Date Range Info */}
                       {formData.startDate && formData.endDate && (
                         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1186,7 +1186,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     year: 'numeric'
                                   })}
                                 </span>
-                                {' '}to{' '}
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 min-w-0">
                                 <span className="font-medium">
                                   {new Date(formData.endDate + 'T00:00:00').toLocaleDateString('en-US', {
                                     weekday: 'long',
@@ -1214,9 +1214,9 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
                           return (
                             <div key={day.key} className="space-y-2">
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between min-w-0">
                                 {/* Day name and checkbox */}
-                                <div className="flex items-center min-w-[120px]">
+                                <div className="flex items-center min-w-[120px] flex-shrink-0">
                                   <input
                                     type="checkbox"
                                     id={`schedule-${day.key}`}
@@ -1247,7 +1247,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                 </div>
 
                                 {/* Enhanced Time range inputs */}
-                                <div className="flex items-center space-x-3">
+                                <div className="flex items-center space-x-3 flex-shrink-0">
                                   <TimeSlotInput
                                     dayKey={day.key}
                                     type="start"
@@ -1337,7 +1337,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     </button>
                   )}
                 </div>
-              </div>
+              className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"
             </form>
           </div>
         </div>
