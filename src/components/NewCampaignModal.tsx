@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { X, Calendar, Clock, Phone, Globe, ChevronDown, ChevronUp, Info, Workflow, ChevronLeft, ChevronRight, AlertCircle, Settings, Users } from 'lucide-react';
-import { TimeInput } from './TimeInput';
+import { X, Calendar, Clock, Phone, Globe, ChevronDown, ChevronUp, Info, Workflow, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { TimePicker } from './TimePicker';
 import { DatePicker } from './DatePicker';
 
@@ -25,10 +24,9 @@ interface PhoneNumber {
   status: 'active' | 'inactive' | 'unverified';
 }
 
-interface GroupOption {
+interface Group {
   id: string;
   name: string;
-  description: string;
   agentCount: number;
   status: 'active' | 'inactive';
 }
@@ -44,13 +42,8 @@ interface FormData {
   maxTries: number;
   retryInterval: string;
   concurrency: number;
-  // Advanced configurations
   groupName: string;
   concurrentCallsPerAgent: number;
-}
-
-interface ValidationErrors {
-  [key: string]: string;
 }
 
 const WEEKDAYS = [
@@ -123,45 +116,15 @@ const PHONE_NUMBERS: PhoneNumber[] = [
     flag: '🇬🇧',
     status: 'active'
   }
-] as const;
+];
 
-const GROUP_OPTIONS: GroupOption[] = [
-  {
-    id: '1',
-    name: 'Sales Team Alpha',
-    description: 'Primary sales team for outbound campaigns',
-    agentCount: 12,
-    status: 'active'
-  },
-  {
-    id: '2',
-    name: 'Customer Support',
-    description: 'Customer service and support team',
-    agentCount: 8,
-    status: 'active'
-  },
-  {
-    id: '3',
-    name: 'Lead Generation',
-    description: 'Specialized lead generation team',
-    agentCount: 6,
-    status: 'active'
-  },
-  {
-    id: '4',
-    name: 'Follow-up Team',
-    description: 'Follow-up and retention specialists',
-    agentCount: 4,
-    status: 'active'
-  },
-  {
-    id: '5',
-    name: 'Premium Support',
-    description: 'High-value customer support team',
-    agentCount: 3,
-    status: 'inactive'
-  }
-] as const;
+const GROUPS: Group[] = [
+  { id: '1', name: 'Sales Team', agentCount: 12, status: 'active' },
+  { id: '2', name: 'Support Team', agentCount: 8, status: 'active' },
+  { id: '3', name: 'Marketing Team', agentCount: 5, status: 'active' },
+  { id: '4', name: 'Customer Success', agentCount: 6, status: 'active' },
+  { id: '5', name: 'Technical Team', agentCount: 4, status: 'inactive' }
+];
 
 // Helper functions
 const getUserTimezone = (): string => {
@@ -193,7 +156,9 @@ const getCurrentTimeInTimezone = (timezone: string): string => {
 const formatTo12Hour = (time24: string): string => {
   if (!time24 || !time24.includes(':')) return time24;
   
-  const [hours, minutes] = time24.split(':');
+  const parts = time24.split(':');
+  const hours = parts[0];
+  const minutes = parts[1];
   const hour24 = parseInt(hours, 10);
   const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
   const period = hour24 >= 12 ? 'PM' : 'AM';
@@ -204,8 +169,12 @@ const formatTo12Hour = (time24: string): string => {
 const convertTo24Hour = (time12: string): string => {
   if (!time12 || !time12.includes(':')) return time12;
   
-  const [time, period] = time12.split(' ');
-  const [hours, minutes] = time.split(':');
+  const parts = time12.split(' ');
+  const time = parts[0];
+  const period = parts[1];
+  const timeParts = time.split(':');
+  const hours = timeParts[0];
+  const minutes = timeParts[1];
   let hour24 = parseInt(hours, 10);
   
   if (period === 'PM' && hour24 !== 12) {
@@ -264,6 +233,150 @@ const isDayInRange = (dayIndex: number, startDate: string, endDate: string): boo
   return daysInRange.has(dayIndex);
 };
 
+// Memoized TimeSlotInput component
+const TimeSlotInput = React.memo<{
+  dayKey: string;
+  type: 'start' | 'end';
+  value: string;
+  enabled: boolean;
+  onChange: (value: string) => void;
+  hasError: boolean;
+}>(({ dayKey, type, value, enabled, onChange, hasError }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const handleTimeChange = useCallback((newTime: string) => {
+    const time24 = convertTo24Hour(newTime);
+    onChange(time24);
+    setIsOpen(false);
+  }, [onChange]);
+
+  const commonTimes = useMemo(() => [
+    '12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM',
+    '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
+    '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
+    '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'
+  ], []);
+
+  const buttonClasses = useMemo(() => {
+    const baseClasses = 'w-36 px-4 py-3 text-sm border rounded-lg transition-all duration-200 text-left';
+    const enabledClasses = 'border-gray-300 bg-white text-gray-900 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 cursor-pointer';
+    const disabledClasses = 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed';
+    const errorClasses = 'border-red-300';
+    
+    let classes = baseClasses;
+    if (enabled) {
+      classes += ' ' + enabledClasses;
+    } else {
+      classes += ' ' + disabledClasses;
+    }
+    if (hasError) {
+      classes += ' ' + errorClasses;
+    }
+    
+    return classes;
+  }, [enabled, hasError]);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => enabled && setIsOpen(!isOpen)}
+        disabled={!enabled}
+        className={buttonClasses}
+      >
+        <div className="flex items-center justify-between">
+          <span className="font-medium">
+            {formatTo12Hour(value)}
+          </span>
+          {enabled && (
+            <Clock className="w-4 h-4 text-gray-400" />
+          )}
+        </div>
+      </button>
+
+      {isOpen && enabled && (
+        <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+          <div className="p-2">
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 px-2">
+              {type === 'start' ? 'Start Time' : 'End Time'}
+            </div>
+            <div className="space-y-1">
+              {commonTimes.map(time => {
+                const isSelected = formatTo12Hour(value) === time;
+                const buttonClass = isSelected 
+                  ? 'w-full px-3 py-2 text-left text-sm rounded bg-blue-100 text-blue-700 font-medium'
+                  : 'w-full px-3 py-2 text-left text-sm rounded hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200 text-gray-700';
+                
+                return (
+                  <button
+                    key={time}
+                    type="button"
+                    onClick={() => handleTimeChange(time)}
+                    className={buttonClass}
+                  >
+                    {time}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+TimeSlotInput.displayName = 'TimeSlotInput';
+
+// Memoized StepIndicator component
+const StepIndicator = React.memo<{
+  currentStep: number;
+}>(({ currentStep }) => {
+  const stepLabels = useMemo(() => [
+    'Campaign Info & Configurations',
+    'Schedule Configuration'
+  ], []);
+
+  return (
+    <div className="flex items-center justify-center mb-8">
+      <div className="flex items-center space-x-4">
+        {[1, 2].map((step) => {
+          const isActive = currentStep >= step;
+          const circleClasses = isActive 
+            ? 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 bg-blue-600 text-white'
+            : 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 bg-gray-200 text-gray-600';
+          const labelClasses = isActive 
+            ? 'font-medium text-blue-600'
+            : 'font-medium text-gray-500';
+          const lineClasses = currentStep > step 
+            ? 'w-12 h-0.5 transition-all duration-200 bg-blue-600'
+            : 'w-12 h-0.5 transition-all duration-200 bg-gray-200';
+
+          return (
+            <React.Fragment key={step}>
+              <div className="flex items-center">
+                <div className={circleClasses}>
+                  {step}
+                </div>
+                <div className="ml-3 text-sm">
+                  <div className={labelClasses}>
+                    {stepLabels[step - 1]}
+                  </div>
+                </div>
+              </div>
+              {step < 2 && (
+                <div className={lineClasses} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+StepIndicator.displayName = 'StepIndicator';
+
 export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   isOpen,
   onClose,
@@ -271,7 +384,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 }) => {
   // State management
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>(() => ({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     ivr: '',
     phoneNumber: '',
@@ -287,107 +400,38 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     concurrency: 1,
     groupName: '',
     concurrentCallsPerAgent: 1
-  }));
+  });
 
-  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [currentTimes, setCurrentTimes] = useState<Record<string, string>>({});
   const [selectedTimezone, setSelectedTimezone] = useState<string>(getUserTimezone());
   const [isTimezoneDropdownOpen, setIsTimezoneDropdownOpen] = useState(false);
   const [isPhoneNumberDropdownOpen, setIsPhoneNumberDropdownOpen] = useState(false);
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
+  const [isAdvancedConfigExpanded, setIsAdvancedConfigExpanded] = useState(false);
 
-  // Refs
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Memoized values
+  // Memoized computed values
   const selectedPhoneNumber = useMemo(() => 
     PHONE_NUMBERS.find(phone => phone.id === formData.phoneNumber),
     [formData.phoneNumber]
   );
 
   const selectedGroup = useMemo(() => 
-    GROUP_OPTIONS.find(group => group.id === formData.groupName),
+    GROUPS.find(group => group.id === formData.groupName),
     [formData.groupName]
   );
 
   const activeGroups = useMemo(() => 
-    GROUP_OPTIONS.filter(group => group.status === 'active'),
+    GROUPS.filter(group => group.status === 'active'),
     []
   );
 
-  // Update schedule when date range changes
-  useEffect(() => {
-    if (formData.startDate && formData.endDate) {
-      const daysInRange = getDaysInDateRange(formData.startDate, formData.endDate);
-      
-      setFormData(prev => ({
-        ...prev,
-        schedule: WEEKDAYS.reduce((acc, day) => {
-          const shouldBeEnabled = daysInRange.has(day.dayIndex);
-          return {
-            ...acc,
-            [day.key]: {
-              ...prev.schedule[day.key],
-              enabled: shouldBeEnabled
-            }
-          };
-        }, {})
-      }));
-    }
-  }, [formData.startDate, formData.endDate]);
-
-  // Update current times for timezones
-  useEffect(() => {
-    const updateTimes = () => {
-      const times: Record<string, string> = {};
-      TIMEZONES.forEach(tz => {
-        times[tz.value] = getCurrentTimeInTimezone(tz.value);
-      });
-      setCurrentTimes(times);
-    };
-
-    updateTimes();
-    const interval = setInterval(updateTimes, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Reset form state when modal opens/closes
-  useEffect(() => {
-    if (isOpen) {
-      setHasAttemptedSubmit(false);
-      setErrors({});
-      setCurrentStep(1);
-      setIsAdvancedExpanded(false);
-    }
-  }, [isOpen]);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest('.timezone-dropdown-container')) {
-        setIsTimezoneDropdownOpen(false);
-      }
-      if (!target.closest('.phone-number-dropdown-container')) {
-        setIsPhoneNumberDropdownOpen(false);
-      }
-      if (!target.closest('.group-dropdown-container')) {
-        setIsGroupDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Validation functions
+  // Memoized validation functions
   const validateStep = useCallback((step: number): boolean => {
-    const newErrors: ValidationErrors = {};
+    const newErrors: Record<string, string> = {};
 
     if (step === 1) {
-      // Campaign Info & Configurations validation
       if (!formData.name.trim()) {
         newErrors.name = 'Campaign name is required';
       }
@@ -400,30 +444,30 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
         newErrors.ivr = 'IVR selection is required';
       }
 
-      if (formData.maxTries < 1 || formData.maxTries > 10) {
+      const maxTriesNum = Number(formData.maxTries);
+      if (maxTriesNum < 1 || maxTriesNum > 10) {
         newErrors.maxTries = 'Maximum tries must be between 1 and 10';
       }
 
-      if (formData.concurrency < 1 || formData.concurrency > 100) {
+      const concurrencyNum = Number(formData.concurrency);
+      if (concurrencyNum < 1 || concurrencyNum > 100) {
         newErrors.concurrency = 'Concurrency must be between 1 and 100';
       }
 
-      // Validate retry interval format (HH:MM:SS)
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
       if (!timeRegex.test(formData.retryInterval)) {
         newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
       }
 
-      // Advanced configurations validation (if expanded)
-      if (isAdvancedExpanded) {
-        if (formData.groupName && formData.concurrentCallsPerAgent < 1) {
-          newErrors.concurrentCallsPerAgent = 'Concurrent calls per agent must be at least 1';
+      if (isAdvancedConfigExpanded) {
+        const concurrentCallsNum = Number(formData.concurrentCallsPerAgent);
+        if (concurrentCallsNum < 1 || concurrentCallsNum > 50) {
+          newErrors.concurrentCallsPerAgent = 'Concurrent calls per agent must be between 1 and 50';
         }
       }
     }
 
     if (step === 2) {
-      // Schedule Configuration validation
       if (!formData.startDate) {
         newErrors.startDate = 'Start date is required';
       } else {
@@ -451,7 +495,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
         newErrors.schedule = 'At least one day must be selected';
       }
 
-      // Validate time ranges for enabled days
       Object.entries(formData.schedule).forEach(([dayKey, day]) => {
         if (day.enabled) {
           const startTime = new Date(`2000-01-01T${day.startTime}:00`);
@@ -466,13 +509,64 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData, isAdvancedExpanded]);
+  }, [formData, isAdvancedConfigExpanded]);
 
   const validateForm = useCallback((): boolean => {
     return validateStep(1) && validateStep(2);
   }, [validateStep]);
 
   // Event handlers
+  const handleFormDataChange = useCallback((field: keyof FormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear related errors
+    if (hasAttemptedSubmit && errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  }, [hasAttemptedSubmit, errors]);
+
+  const handleScheduleChange = useCallback((dayKey: string, field: keyof ScheduleDay, value: boolean | string) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule: {
+        ...prev.schedule,
+        [dayKey]: {
+          ...prev.schedule[dayKey],
+          [field]: value
+        }
+      }
+    }));
+    
+    const errorKey = `schedule-${dayKey}`;
+    if (errors[errorKey]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[errorKey];
+        return newErrors;
+      });
+    }
+  }, [errors]);
+
+  const handleTimezoneSelect = useCallback((timezone: string) => {
+    setSelectedTimezone(timezone);
+    handleFormDataChange('timezone', timezone);
+    setIsTimezoneDropdownOpen(false);
+  }, [handleFormDataChange]);
+
+  const handlePhoneNumberSelect = useCallback((phoneNumberId: string) => {
+    handleFormDataChange('phoneNumber', phoneNumberId);
+    setIsPhoneNumberDropdownOpen(false);
+  }, [handleFormDataChange]);
+
+  const handleGroupSelect = useCallback((groupId: string) => {
+    handleFormDataChange('groupName', groupId);
+    setIsGroupDropdownOpen(false);
+  }, [handleFormDataChange]);
+
   const handleNext = useCallback(() => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, 2));
@@ -489,213 +583,87 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     
     if (validateForm()) {
       onSubmit(formData);
-      // Reset form state
       setHasAttemptedSubmit(false);
       setErrors({});
-      setCurrentStep(1);
-      setIsAdvancedExpanded(false);
       onClose();
     }
-  }, [formData, validateForm, onSubmit, onClose]);
+  }, [validateForm, onSubmit, formData, onClose]);
 
-  const handleScheduleChange = useCallback((dayKey: string, field: keyof ScheduleDay, value: boolean | string) => {
-    setFormData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [dayKey]: {
-          ...prev.schedule[dayKey],
-          [field]: value
-        }
+  const toggleAdvancedConfig = useCallback(() => {
+    setIsAdvancedConfigExpanded(prev => !prev);
+  }, []);
+
+  // Effects
+  useEffect(() => {
+    if (formData.startDate && formData.endDate) {
+      const daysInRange = getDaysInDateRange(formData.startDate, formData.endDate);
+      
+      setFormData(prev => ({
+        ...prev,
+        schedule: WEEKDAYS.reduce((acc, day) => {
+          const shouldBeEnabled = daysInRange.has(day.dayIndex);
+          return {
+            ...acc,
+            [day.key]: {
+              ...prev.schedule[day.key],
+              enabled: shouldBeEnabled
+            }
+          };
+        }, {})
+      }));
+    }
+  }, [formData.startDate, formData.endDate]);
+
+  useEffect(() => {
+    const updateTimes = () => {
+      const times: Record<string, string> = {};
+      TIMEZONES.forEach(tz => {
+        times[tz.value] = getCurrentTimeInTimezone(tz.value);
+      });
+      setCurrentTimes(times);
+    };
+
+    updateTimes();
+    const interval = setInterval(updateTimes, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasAttemptedSubmit(false);
+      setErrors({});
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.timezone-dropdown-container')) {
+        setIsTimezoneDropdownOpen(false);
       }
-    }));
-    
-    // Clear any existing error for this day when making changes
-    if (errors[`schedule-${dayKey}`]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[`schedule-${dayKey}`];
-        return newErrors;
-      });
-    }
-  }, [errors]);
+      if (!target.closest('.phone-number-dropdown-container')) {
+        setIsPhoneNumberDropdownOpen(false);
+      }
+      if (!target.closest('.group-dropdown-container')) {
+        setIsGroupDropdownOpen(false);
+      }
+    };
 
-  const handleTimezoneSelect = useCallback((timezone: string) => {
-    setSelectedTimezone(timezone);
-    setFormData(prev => ({ ...prev, timezone }));
-    setIsTimezoneDropdownOpen(false);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handlePhoneNumberSelect = useCallback((phoneNumberId: string) => {
-    setFormData(prev => ({ ...prev, phoneNumber: phoneNumberId }));
-    setIsPhoneNumberDropdownOpen(false);
-    
-    // Clear phone number error if it exists
-    if (errors.phoneNumber) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.phoneNumber;
-        return newErrors;
-      });
-    }
-  }, [errors.phoneNumber]);
-
-  const handleGroupSelect = useCallback((groupId: string) => {
-    setFormData(prev => ({ ...prev, groupName: groupId }));
-    setIsGroupDropdownOpen(false);
-  }, []);
-
-  const handleIvrChange = useCallback((value: string) => {
-    setFormData(prev => ({ ...prev, ivr: value }));
-    if (hasAttemptedSubmit && errors.ivr && value) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.ivr;
-        return newErrors;
-      });
-    }
-  }, [hasAttemptedSubmit, errors.ivr]);
-
-  const handleFormDataChange = useCallback((field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error for this field if it exists
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [errors]);
-
-  // Helper function to get the appropriate error for display
+  // Helper function to get error
   const getError = useCallback((field: string) => {
     return errors[field];
   }, [errors]);
-
-  // Enhanced Time Input Component
-  const TimeSlotInput: React.FC<{
-    dayKey: string;
-    type: 'start' | 'end';
-    value: string;
-    enabled: boolean;
-    onChange: (value: string) => void;
-  }> = React.memo(({ dayKey, type, value, enabled, onChange }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    
-    const handleTimeChange = useCallback((newTime: string) => {
-      const time24 = convertTo24Hour(newTime);
-      onChange(time24);
-      setIsOpen(false);
-    }, [onChange]);
-
-    const commonTimes = useMemo(() => [
-      '12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM',
-      '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
-      '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
-      '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'
-    ], []);
-
-    return (
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => enabled && setIsOpen(!isOpen)}
-          disabled={!enabled}
-          className={`
-            w-36 px-4 py-3 text-sm border rounded-lg transition-all duration-200 text-left
-            ${enabled 
-              ? 'border-gray-300 bg-white text-gray-900 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 cursor-pointer' 
-              : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-            }
-            ${getError(`schedule-${dayKey}`) ? 'border-red-300' : ''}
-          `}
-        >
-          <div className="flex items-center justify-between">
-            <span className="font-medium">
-              {formatTo12Hour(value)}
-            </span>
-            {enabled && (
-              <Clock className="w-4 h-4 text-gray-400" />
-            )}
-          </div>
-        </button>
-
-        {isOpen && enabled && (
-          <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-            <div className="p-2">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 px-2">
-                {type === 'start' ? 'Start Time' : 'End Time'}
-              </div>
-              <div className="space-y-1">
-                {commonTimes.map(time => (
-                  <button
-                    key={time}
-                    type="button"
-                    onClick={() => handleTimeChange(time)}
-                    className={`
-                      w-full px-3 py-2 text-left text-sm rounded hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200
-                      ${formatTo12Hour(value) === time ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700'}
-                    `}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  });
-
-  // Step indicator component
-  const StepIndicator: React.FC = React.memo(() => {
-    const stepLabels = [
-      'Campaign Info & Configurations',
-      'Schedule Configuration'
-    ];
-
-    return (
-      <div className="flex items-center justify-center mb-8">
-        <div className="flex items-center space-x-4">
-          {[1, 2].map((step) => (
-            <React.Fragment key={step}>
-              <div className="flex items-center">
-                <div className={`
-                  w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200
-                  ${currentStep >= step 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-600'
-                  }
-                `}>
-                  {step}
-                </div>
-                <div className="ml-3 text-sm">
-                  <div className={`font-medium ${currentStep >= step ? 'text-blue-600' : 'text-gray-500'}`}>
-                    {stepLabels[step - 1]}
-                  </div>
-                </div>
-              </div>
-              {step < 2 && (
-                <div className={`
-                  w-12 h-0.5 transition-all duration-200
-                  ${currentStep > step ? 'bg-blue-600' : 'bg-gray-200'}
-                `} />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-    );
-  });
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden" ref={containerRef}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-heading-2">Create New Campaign</h2>
           <button
@@ -709,7 +677,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
         <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="p-6">
-            <StepIndicator />
+            <StepIndicator currentStep={currentStep} />
 
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Step 1: Campaign Info & Configurations */}
@@ -784,26 +752,32 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
                           {isPhoneNumberDropdownOpen && (
                             <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                              {PHONE_NUMBERS.map((phone, index) => (
-                                <button
-                                  key={phone.id}
-                                  type="button"
-                                  onClick={() => handlePhoneNumberSelect(phone.id)}
-                                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
-                                    index !== PHONE_NUMBERS.length - 1 ? 'border-b border-gray-100' : ''
-                                  } ${
-                                    formData.phoneNumber === phone.id ? 'bg-blue-50 text-blue-700' : ''
-                                  }`}
-                                >
-                                  <div className="flex items-center">
-                                    <span className="text-lg mr-3">{phone.flag}</span>
-                                    <span className="font-medium">{phone.formatted}</span>
-                                  </div>
-                                  {formData.phoneNumber === phone.id && (
-                                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                                  )}
-                                </button>
-                              ))}
+                              {PHONE_NUMBERS.map((phone, index) => {
+                                const isSelected = formData.phoneNumber === phone.id;
+                                const isLast = index === PHONE_NUMBERS.length - 1;
+                                const buttonClasses = `w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
+                                  !isLast ? 'border-b border-gray-100' : ''
+                                } ${
+                                  isSelected ? 'bg-blue-50 text-blue-700' : ''
+                                }`;
+
+                                return (
+                                  <button
+                                    key={phone.id}
+                                    type="button"
+                                    onClick={() => handlePhoneNumberSelect(phone.id)}
+                                    className={buttonClasses}
+                                  >
+                                    <div className="flex items-center">
+                                      <span className="text-lg mr-3">{phone.flag}</span>
+                                      <span className="font-medium">{phone.formatted}</span>
+                                    </div>
+                                    {isSelected && (
+                                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -835,7 +809,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         <select
                           id="ivr-select"
                           value={formData.ivr}
-                          onChange={(e) => handleIvrChange(e.target.value)}
+                          onChange={(e) => handleFormDataChange('ivr', e.target.value)}
                           className={`form-select h-12 ${
                             getError('ivr') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                           }`}
@@ -913,38 +887,33 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     </div>
 
                     {/* Advanced Configurations Section */}
-                    <div className="border-t border-gray-200 pt-6">
+                    <div className="border border-gray-200 rounded-lg">
                       <button
                         type="button"
-                        onClick={() => setIsAdvancedExpanded(!isAdvancedExpanded)}
-                        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 border border-gray-200"
+                        onClick={toggleAdvancedConfig}
+                        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200 rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Settings className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div className="text-left">
-                            <h4 className="text-sm font-medium text-gray-900">Advanced Configurations</h4>
-                            <p className="text-xs text-gray-500">Optional settings for advanced campaign management</p>
-                          </div>
+                          <Settings className="w-5 h-5 text-gray-600" />
+                          <span className="text-sm font-medium text-gray-900">Advanced Configurations</span>
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            Optional
+                          </span>
                         </div>
-                        {isAdvancedExpanded ? (
+                        {isAdvancedConfigExpanded ? (
                           <ChevronUp className="w-5 h-5 text-gray-400" />
                         ) : (
                           <ChevronDown className="w-5 h-5 text-gray-400" />
                         )}
                       </button>
 
-                      {isAdvancedExpanded && (
-                        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-6 animate-fade-in">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {isAdvancedConfigExpanded && (
+                        <div className="px-6 pb-6 border-t border-gray-200 bg-gray-50">
+                          <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Group Name Selection */}
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <div className="flex items-center">
-                                  <Users className="w-4 h-4 mr-1" />
-                                  Group Name
-                                </div>
+                                Group Name
                               </label>
                               <div className="relative group-dropdown-container">
                                 <button
@@ -952,22 +921,22 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                   onClick={() => setIsGroupDropdownOpen(!isGroupDropdownOpen)}
                                   className="w-full form-input text-left flex items-center justify-between"
                                 >
-                                  <div className="flex items-center">
-                                    <span className={selectedGroup ? 'text-gray-900' : 'text-gray-400'}>
-                                      {selectedGroup ? (
-                                        <div>
-                                          <div className="font-medium">{selectedGroup.name}</div>
-                                          <div className="text-xs text-gray-500">{selectedGroup.agentCount} agents</div>
-                                        </div>
-                                      ) : (
-                                        'Select group (optional)'
-                                      )}
-                                    </span>
-                                  </div>
+                                  <span className={selectedGroup ? 'text-gray-900' : 'text-gray-400'}>
+                                    {selectedGroup ? (
+                                      <div className="flex items-center justify-between w-full">
+                                        <span className="font-medium">{selectedGroup.name}</span>
+                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                          {selectedGroup.agentCount} agents
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      'Select group (optional)'
+                                    )}
+                                  </span>
                                   {isGroupDropdownOpen ? (
-                                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                                    <ChevronUp className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
                                   ) : (
-                                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                                    <ChevronDown className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
                                   )}
                                 </button>
 
@@ -976,34 +945,38 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => handleGroupSelect('')}
-                                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors duration-200 ${
-                                        !formData.groupName ? 'bg-blue-50 text-blue-700' : ''
-                                      }`}
+                                      className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-500 border-b border-gray-100 transition-colors duration-200"
                                     >
-                                      <div className="font-medium text-gray-500">No group selected</div>
-                                      <div className="text-xs text-gray-400">Use default assignment</div>
+                                      No group selected
                                     </button>
-                                    {activeGroups.map((group, index) => (
-                                      <button
-                                        key={group.id}
-                                        type="button"
-                                        onClick={() => handleGroupSelect(group.id)}
-                                        className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
-                                          index !== activeGroups.length - 1 ? 'border-b border-gray-100' : ''
-                                        } ${
-                                          formData.groupName === group.id ? 'bg-blue-50 text-blue-700' : ''
-                                        }`}
-                                      >
-                                        <div>
-                                          <div className="font-medium">{group.name}</div>
-                                          <div className="text-xs text-gray-500">{group.description}</div>
-                                          <div className="text-xs text-gray-400 mt-1">{group.agentCount} agents available</div>
-                                        </div>
-                                        {formData.groupName === group.id && (
-                                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                                        )}
-                                      </button>
-                                    ))}
+                                    {activeGroups.map((group, index) => {
+                                      const isSelected = formData.groupName === group.id;
+                                      const isLast = index === activeGroups.length - 1;
+                                      const buttonClasses = `w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
+                                        !isLast ? 'border-b border-gray-100' : ''
+                                      } ${
+                                        isSelected ? 'bg-blue-50 text-blue-700' : ''
+                                      }`;
+
+                                      return (
+                                        <button
+                                          key={group.id}
+                                          type="button"
+                                          onClick={() => handleGroupSelect(group.id)}
+                                          className={buttonClasses}
+                                        >
+                                          <div>
+                                            <div className="font-medium">{group.name}</div>
+                                            <div className="text-xs text-gray-500">
+                                              {group.agentCount} agents
+                                            </div>
+                                          </div>
+                                          {isSelected && (
+                                            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>
@@ -1021,7 +994,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                 id="concurrent-calls-per-agent"
                                 type="number"
                                 min="1"
-                                max="10"
+                                max="50"
                                 value={formData.concurrentCallsPerAgent}
                                 onChange={(e) => handleFormDataChange('concurrentCallsPerAgent', parseInt(e.target.value) || 1)}
                                 className="form-input h-12"
@@ -1033,7 +1006,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                 </p>
                               )}
                               <p className="text-xs text-gray-500 mt-1">
-                                Maximum simultaneous calls per agent
+                                Maximum simultaneous calls per online agent
                               </p>
                             </div>
                           </div>
@@ -1058,7 +1031,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       value={formData.startDate}
                       onChange={(value) => {
                         handleFormDataChange('startDate', value);
-                        // Clear end date error when start date changes
                         if (errors.endDate) {
                           setErrors(prev => {
                             const newErrors = { ...prev };
@@ -1115,21 +1087,26 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
                       {isTimezoneDropdownOpen && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                          {TIMEZONES.map(timezone => (
-                            <button
-                              key={timezone.value}
-                              type="button"
-                              onClick={() => handleTimezoneSelect(timezone.value)}
-                              className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between ${
-                                selectedTimezone === timezone.value ? 'bg-blue-50 text-blue-700' : ''
-                              }`}
-                            >
-                              <span>{timezone.label}</span>
-                              <span className="text-gray-500 font-mono text-sm">
-                                {currentTimes[timezone.value]}
-                              </span>
-                            </button>
-                          ))}
+                          {TIMEZONES.map(timezone => {
+                            const isSelected = selectedTimezone === timezone.value;
+                            const buttonClasses = `w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between ${
+                              isSelected ? 'bg-blue-50 text-blue-700' : ''
+                            }`;
+
+                            return (
+                              <button
+                                key={timezone.value}
+                                type="button"
+                                onClick={() => handleTimezoneSelect(timezone.value)}
+                                className={buttonClasses}
+                              >
+                                <span>{timezone.label}</span>
+                                <span className="text-gray-500 font-mono text-sm">
+                                  {currentTimes[timezone.value]}
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1185,6 +1162,17 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                             : true;
                           
                           const isDisabledByDateRange = formData.startDate && formData.endDate && !isDayInDateRange;
+                          const hasScheduleError = Boolean(getError(`schedule-${day.key}`));
+
+                          const checkboxClasses = isDisabledByDateRange 
+                            ? 'w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 text-gray-300 cursor-not-allowed' 
+                            : 'w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 text-blue-600 cursor-pointer';
+
+                          const labelClasses = isDisabledByDateRange 
+                            ? 'ml-3 text-sm font-medium select-none text-gray-400 cursor-not-allowed' 
+                            : formData.schedule[day.key].enabled
+                              ? 'ml-3 text-sm font-medium select-none text-gray-900 cursor-pointer'
+                              : 'ml-3 text-sm font-medium select-none text-gray-600 cursor-pointer';
 
                           return (
                             <div key={day.key} className="space-y-2">
@@ -1197,21 +1185,11 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     checked={formData.schedule[day.key].enabled}
                                     onChange={(e) => handleScheduleChange(day.key, 'enabled', e.target.checked)}
                                     disabled={isDisabledByDateRange}
-                                    className={`w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
-                                      isDisabledByDateRange 
-                                        ? 'text-gray-300 cursor-not-allowed' 
-                                        : 'text-blue-600 cursor-pointer'
-                                    }`}
+                                    className={checkboxClasses}
                                   />
                                   <label 
                                     htmlFor={`schedule-${day.key}`} 
-                                    className={`ml-3 text-sm font-medium select-none ${
-                                      isDisabledByDateRange 
-                                        ? 'text-gray-400 cursor-not-allowed' 
-                                        : formData.schedule[day.key].enabled
-                                          ? 'text-gray-900 cursor-pointer'
-                                          : 'text-gray-600 cursor-pointer'
-                                    }`}
+                                    className={labelClasses}
                                   >
                                     {day.label}
                                     {isDisabledByDateRange && (
@@ -1228,6 +1206,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     value={formData.schedule[day.key].startTime}
                                     enabled={formData.schedule[day.key].enabled && !isDisabledByDateRange}
                                     onChange={(value) => handleScheduleChange(day.key, 'startTime', value)}
+                                    hasError={hasScheduleError}
                                   />
                                   
                                   <span className="text-gray-400 text-sm font-medium px-2">to</span>
@@ -1238,12 +1217,13 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     value={formData.schedule[day.key].endTime}
                                     enabled={formData.schedule[day.key].enabled && !isDisabledByDateRange}
                                     onChange={(value) => handleScheduleChange(day.key, 'endTime', value)}
+                                    hasError={hasScheduleError}
                                   />
                                 </div>
                               </div>
                               
                               {/* Error message for this specific day */}
-                              {getError(`schedule-${day.key}`) && (
+                              {hasScheduleError && (
                                 <p className="text-red-500 text-xs ml-7">{getError(`schedule-${day.key}`)}</p>
                               )}
                             </div>
