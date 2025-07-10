@@ -252,6 +252,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         value={formData.startDate}
                         onChange={(date) => handleInputChange('startDate', date)}
                         error={getError('startDate')}
+                       label="Start Date"
                       />
                     </div>
 
@@ -264,6 +265,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         onChange={(date) => handleInputChange('endDate', date)}
                         error={getError('endDate')}
                         minDate={formData.startDate}
+                       label="End Date"
                       />
                     </div>
                   </div>
