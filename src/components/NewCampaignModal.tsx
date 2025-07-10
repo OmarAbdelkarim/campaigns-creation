@@ -44,11 +44,6 @@ interface FormData {
   concurrency: number;
   groupName: string;
   concurrentCallsPerAgent: number;
-  autoScaling: {
-    enabled: boolean;
-    groupName: string;
-    concurrentCallsPerOnlineAgent: number;
-  };
 }
 
 const WEEKDAYS = [
@@ -404,12 +399,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     retryInterval: '00:00:00',
     concurrency: 1,
     groupName: '',
-    concurrentCallsPerAgent: 1,
-    autoScaling: {
-      enabled: false,
-      groupName: '',
-      concurrentCallsPerOnlineAgent: 1
-    }
+    concurrentCallsPerAgent: 1
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -467,17 +457,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
       if (!timeRegex.test(formData.retryInterval)) {
         newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
-      }
-
-      // Validate auto-scaling fields when enabled
-      if (formData.autoScaling.enabled) {
-        if (!formData.autoScaling.groupName.trim()) {
-          newErrors['autoScaling.groupName'] = 'Group Name is required when auto-scaling is enabled';
-        }
-
-        if (formData.autoScaling.concurrentCallsPerOnlineAgent < 1 || formData.autoScaling.concurrentCallsPerOnlineAgent > 100) {
-          newErrors['autoScaling.concurrentCallsPerOnlineAgent'] = 'Concurrent Calls per Online Agent must be between 1 and 100';
-        }
       }
 
       // Concurrency Auto-Scaling validation (only when toggle is ON)
@@ -948,112 +927,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           required
                         />
                       </div>
-                    </div>
-
-                    {/* Advanced Configurations - Auto-Scaling Section */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-sm font-medium text-gray-700">
-                          <div className="flex items-center">
-                            <Clock className="w-4 h-4 mr-1" />
-                            Concurrency Auto-Scaling
-                          </div>
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({
-                            ...prev,
-                            autoScaling: {
-                              ...prev.autoScaling,
-                              enabled: !prev.autoScaling.enabled
-                            }
-                          }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                            formData.autoScaling.enabled ? 'bg-blue-600' : 'bg-gray-200'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                              formData.autoScaling.enabled ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      {formData.autoScaling.enabled && (
-                        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4 animate-fade-in">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Group Name */}
-                            <div>
-                              <label htmlFor="group-name" className="block text-sm font-medium text-gray-700 mb-2">
-                                Group Name
-                              </label>
-                              <input
-                                id="group-name"
-                                type="text"
-                                value={formData.autoScaling.groupName}
-                                onChange={(e) => setFormData(prev => ({
-                                  ...prev,
-                                  autoScaling: {
-                                    ...prev.autoScaling,
-                                    groupName: e.target.value
-                                  }
-                                }))}
-                                className={`form-input ${
-                                  getError('autoScaling.groupName') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                                }`}
-                                placeholder="Enter group name"
-                                aria-describedby={getError('autoScaling.groupName') ? "group-name-error" : undefined}
-                              />
-                              {getError('autoScaling.groupName') && (
-                                <p id="group-name-error" className="text-red-500 text-sm mt-1">
-                                  {getError('autoScaling.groupName')}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Concurrent Calls per Online Agent */}
-                            <div>
-                              <label htmlFor="concurrent-calls-per-agent" className="block text-sm font-medium text-gray-700 mb-2">
-                                Concurrent Calls per Online Agent
-                              </label>
-                              <input
-                                id="concurrent-calls-per-agent"
-                                type="number"
-                                min="1"
-                                max="100"
-                                value={formData.autoScaling.concurrentCallsPerOnlineAgent}
-                                onChange={(e) => setFormData(prev => ({
-                                  ...prev,
-                                  autoScaling: {
-                                    ...prev.autoScaling,
-                                    concurrentCallsPerOnlineAgent: parseInt(e.target.value) || 1
-                                  }
-                                }))}
-                                className={`form-input ${
-                                  getError('autoScaling.concurrentCallsPerOnlineAgent') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                                }`}
-                                aria-describedby={getError('autoScaling.concurrentCallsPerOnlineAgent') ? "concurrent-calls-error" : undefined}
-                              />
-                              {getError('autoScaling.concurrentCallsPerOnlineAgent') && (
-                                <p id="concurrent-calls-error" className="text-red-500 text-sm mt-1">
-                                  {getError('autoScaling.concurrentCallsPerOnlineAgent')}
-                                </p>
-                              )}
-                              <p className="text-xs text-gray-500 mt-1">
-                                Number of simultaneous calls per online agent
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-start space-x-2">
-                            <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <p className="text-xs text-blue-700">
-                              Auto-scaling automatically adjusts the number of concurrent calls based on available online agents in the specified group.
-                            </p>
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     {/* Advanced Configurations Section */}
