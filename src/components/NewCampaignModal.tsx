@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { X, Calendar, Clock, Phone, Globe, ChevronDown, ChevronUp, Info, Workflow, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Calendar, Clock, Phone, Globe, ChevronDown, ChevronUp, Info, Workflow, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { TimeInput } from './TimeInput';
 import { TimePicker } from './TimePicker';
 import { DatePicker } from './DatePicker';
 
@@ -24,13 +25,6 @@ interface PhoneNumber {
   status: 'active' | 'inactive' | 'unverified';
 }
 
-interface Group {
-  id: string;
-  name: string;
-  agentCount: number;
-  status: 'active' | 'inactive';
-}
-
 interface FormData {
   name: string;
   ivr: string;
@@ -40,10 +34,8 @@ interface FormData {
   schedule: Record<string, ScheduleDay>;
   timezone: string;
   maxTries: number;
-  retryInterval: string;
+  retryInterval: string; // Changed to HH:MM:SS format
   concurrency: number;
-  groupName: string;
-  concurrentCallsPerAgent: number;
 }
 
 const WEEKDAYS = [
@@ -54,7 +46,7 @@ const WEEKDAYS = [
   { key: 'friday', label: 'Friday', short: 'Fri', dayIndex: 5 },
   { key: 'saturday', label: 'Saturday', short: 'Sat', dayIndex: 6 },
   { key: 'sunday', label: 'Sunday', short: 'Sun', dayIndex: 0 }
-] as const;
+];
 
 const TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (ET)', offset: -5 },
@@ -65,7 +57,7 @@ const TIMEZONES = [
   { value: 'Europe/Paris', label: 'Central European Time (CET)', offset: 1 },
   { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST)', offset: 9 },
   { value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)', offset: 11 }
-] as const;
+];
 
 const IVR_OPTIONS = [
   'DefaultIVR1658315753',
@@ -73,8 +65,9 @@ const IVR_OPTIONS = [
   'PhonebotElevenlabs3',
   'AccountWorkingHours',
   'DefaultClient'
-] as const;
+];
 
+// Phone numbers matching the screenshot exactly
 const PHONE_NUMBERS: PhoneNumber[] = [
   {
     id: '1',
@@ -118,23 +111,16 @@ const PHONE_NUMBERS: PhoneNumber[] = [
   }
 ];
 
-const GROUPS: Group[] = [
-  { id: '1', name: 'Sales Team', agentCount: 12, status: 'active' },
-  { id: '2', name: 'Support Team', agentCount: 8, status: 'active' },
-  { id: '3', name: 'Marketing Team', agentCount: 5, status: 'active' },
-  { id: '4', name: 'Customer Success', agentCount: 6, status: 'active' },
-  { id: '5', name: 'Technical Team', agentCount: 4, status: 'inactive' }
-];
-
-// Helper functions
+// Helper function to get user's timezone
 const getUserTimezone = (): string => {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   } catch {
-    return 'America/New_York';
+    return 'America/New_York'; // Fallback
   }
 };
 
+// Helper function to get current time in a timezone
 const getCurrentTimeInTimezone = (timezone: string): string => {
   try {
     const now = new Date();
@@ -153,12 +139,11 @@ const getCurrentTimeInTimezone = (timezone: string): string => {
   }
 };
 
+// Helper function to format time to 12-hour format
 const formatTo12Hour = (time24: string): string => {
   if (!time24 || !time24.includes(':')) return time24;
   
-  const parts = time24.split(':');
-  const hours = parts[0];
-  const minutes = parts[1];
+  const [hours, minutes] = time24.split(':');
   const hour24 = parseInt(hours, 10);
   const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
   const period = hour24 >= 12 ? 'PM' : 'AM';
@@ -166,15 +151,12 @@ const formatTo12Hour = (time24: string): string => {
   return `${hour12}:${minutes} ${period}`;
 };
 
+// Helper function to convert 12-hour to 24-hour format
 const convertTo24Hour = (time12: string): string => {
   if (!time12 || !time12.includes(':')) return time12;
   
-  const parts = time12.split(' ');
-  const time = parts[0];
-  const period = parts[1];
-  const timeParts = time.split(':');
-  const hours = timeParts[0];
-  const minutes = timeParts[1];
+  const [time, period] = time12.split(' ');
+  const [hours, minutes] = time.split(':');
   let hour24 = parseInt(hours, 10);
   
   if (period === 'PM' && hour24 !== 12) {
@@ -186,6 +168,7 @@ const convertTo24Hour = (time12: string): string => {
   return `${hour24.toString().padStart(2, '0')}:${minutes}`;
 };
 
+// Helper function to get today's date in YYYY-MM-DD format
 const getTodayDate = (): string => {
   const today = new Date();
   const year = today.getFullYear();
@@ -194,6 +177,7 @@ const getTodayDate = (): string => {
   return `${year}-${month}-${day}`;
 };
 
+// Helper function to add one year to a date
 const addOneYear = (dateString: string): string => {
   if (!dateString) return '';
   try {
@@ -208,6 +192,7 @@ const addOneYear = (dateString: string): string => {
   }
 };
 
+// Helper function to get days of week that fall within date range
 const getDaysInDateRange = (startDate: string, endDate: string): Set<number> => {
   if (!startDate || !endDate) return new Set();
   
@@ -216,9 +201,10 @@ const getDaysInDateRange = (startDate: string, endDate: string): Set<number> => 
     const end = new Date(endDate + 'T00:00:00');
     const daysInRange = new Set<number>();
     
+    // Iterate through each day in the range
     const currentDate = new Date(start);
     while (currentDate <= end) {
-      daysInRange.add(currentDate.getDay());
+      daysInRange.add(currentDate.getDay()); // 0 = Sunday, 1 = Monday, etc.
       currentDate.setDate(currentDate.getDate() + 1);
     }
     
@@ -227,164 +213,18 @@ const getDaysInDateRange = (startDate: string, endDate: string): Set<number> => 
     return new Set();
   }
 };
-// Helper function to get filtered weekdays that exist within the date range
-const getFilteredWeekdays = (startDate: string, endDate: string) => {
-  if (!startDate || !endDate) return WEEKDAYS;
-  
+
+// Helper function to check if a day should be enabled based on date range
+const isDayInRange = (dayIndex: number, startDate: string, endDate: string): boolean => {
   const daysInRange = getDaysInDateRange(startDate, endDate);
-  return WEEKDAYS.filter(day => daysInRange.has(day.dayIndex));
+  return daysInRange.has(dayIndex);
 };
-
-// Memoized TimeSlotInput component
-const TimeSlotInput = React.memo<{
-  dayKey: string;
-  type: 'start' | 'end';
-  value: string;
-  enabled: boolean;
-  onChange: (value: string) => void;
-  hasError: boolean;
-}>(({ dayKey, type, value, enabled, onChange, hasError }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  const handleTimeChange = useCallback((newTime: string) => {
-    const time24 = convertTo24Hour(newTime);
-    onChange(time24);
-    setIsOpen(false);
-  }, [onChange]);
-
-  const commonTimes = useMemo(() => [
-    '12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM',
-    '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
-    '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
-    '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'
-  ], []);
-
-  const buttonClasses = useMemo(() => {
-    const baseClasses = 'w-36 px-4 py-3 text-sm border rounded-lg transition-all duration-200 text-left';
-    const enabledClasses = 'border-gray-300 bg-white text-gray-900 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 cursor-pointer';
-    const disabledClasses = 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed';
-    const errorClasses = 'border-red-300';
-
-    let classes = baseClasses;
-    if (enabled) {
-      classes += ' ' + enabledClasses;
-    } else {
-      classes += ' ' + disabledClasses;
-    }
-    if (hasError) {
-      classes += ' ' + errorClasses;
-    }
-    
-    return classes;
-  }, [enabled, hasError]);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => enabled && setIsOpen(!isOpen)}
-        disabled={!enabled}
-        className={buttonClasses}
-      >
-        <div className="flex items-center justify-between">
-          <span className="font-medium">
-            {formatTo12Hour(value)}
-          </span>
-          {enabled && (
-            <Clock className="w-4 h-4 text-gray-400" />
-          )}
-        </div>
-      </button>
-
-      {isOpen && enabled && (
-        <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-          <div className="p-2">
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 px-2">
-              {type === 'start' ? 'Start Time' : 'End Time'}
-            </div>
-            <div className="space-y-1">
-              {commonTimes.map(time => {
-                const isSelected = formatTo12Hour(value) === time;
-                const buttonClass = isSelected 
-                  ? 'w-full px-3 py-2 text-left text-sm rounded bg-blue-100 text-blue-700 font-medium'
-                  : 'w-full px-3 py-2 text-left text-sm rounded hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200 text-gray-700';
-                
-                return (
-                  <button
-                    key={time}
-                    type="button"
-                    onClick={() => handleTimeChange(time)}
-                    className={buttonClass}
-                  >
-                    {time}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
-
-TimeSlotInput.displayName = 'TimeSlotInput';
-
-// Memoized StepIndicator component
-const StepIndicator = React.memo<{
-  currentStep: number;
-}>(({ currentStep }) => {
-  const stepLabels = useMemo(() => [
-    'Campaign Info & Configurations',
-    'Schedule Configuration'
-  ], []);
-
-  return (
-    <div className="flex items-center justify-center mb-8">
-      <div className="flex items-center space-x-4">
-        {[1, 2].map((step) => {
-          const isActive = currentStep >= step;
-          const circleClasses = isActive 
-            ? 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 bg-blue-600 text-white'
-            : 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 bg-gray-200 text-gray-600';
-          const labelClasses = isActive 
-            ? 'font-medium text-blue-600'
-            : 'font-medium text-gray-500';
-          const lineClasses = currentStep > step 
-            ? 'w-12 h-0.5 transition-all duration-200 bg-blue-600'
-            : 'w-12 h-0.5 transition-all duration-200 bg-gray-200';
-
-          return (
-            <React.Fragment key={step}>
-              <div className="flex items-center">
-                <div className={circleClasses}>
-                  {step}
-                </div>
-                <div className="ml-3 text-sm">
-                  <div className={labelClasses}>
-                    {stepLabels[step - 1]}
-                  </div>
-                </div>
-              </div>
-              {step < 2 && (
-                <div className={lineClasses} />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
-    </div>
-  );
-});
-
-StepIndicator.displayName = 'StepIndicator';
 
 export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   isOpen,
   onClose,
   onSubmit
 }) => {
-  // State management
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -398,211 +238,19 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     }), {}),
     timezone: getUserTimezone(),
     maxTries: 1,
-    retryInterval: '00:00:00',
-    concurrency: 1,
-    groupName: '',
-    concurrentCallsPerAgent: 1
+    retryInterval: '00:00:00', // Default to HH:MM:SS format
+    concurrency: 1
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
+  const [submitErrors, setSubmitErrors] = useState<Record<string, string>>({});
   const [currentTimes, setCurrentTimes] = useState<Record<string, string>>({});
   const [selectedTimezone, setSelectedTimezone] = useState<string>(getUserTimezone());
   const [isTimezoneDropdownOpen, setIsTimezoneDropdownOpen] = useState(false);
   const [isPhoneNumberDropdownOpen, setIsPhoneNumberDropdownOpen] = useState(false);
-  const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [isAdvancedConfigExpanded, setIsAdvancedConfigExpanded] = useState(false);
 
-  // Memoized computed values
-  const selectedPhoneNumber = useMemo(() => 
-    PHONE_NUMBERS.find(phone => phone.id === formData.phoneNumber),
-    [formData.phoneNumber]
-  );
-
-  const selectedGroup = useMemo(() => 
-    GROUPS.find(group => group.id === formData.groupName),
-    [formData.groupName]
-  );
-
-  const activeGroups = useMemo(() => 
-    GROUPS.filter(group => group.status === 'active'),
-    []
-  );
-
-  // Memoized validation functions
-  const validateStep = useCallback((step: number): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (step === 1) {
-      if (!formData.name.trim()) {
-        newErrors.name = 'Campaign name is required';
-      }
-
-      if (!formData.phoneNumber) {
-        newErrors.phoneNumber = 'Phone number selection is required';
-      }
-
-      if (!formData.ivr) {
-        newErrors.ivr = 'IVR selection is required';
-      }
-
-      const maxTriesNum = Number(formData.maxTries);
-      if (maxTriesNum < 1 || maxTriesNum > 10) {
-        newErrors.maxTries = 'Maximum tries must be between 1 and 10';
-      }
-
-      const concurrencyNum = Number(formData.concurrency);
-      if (concurrencyNum < 1 || concurrencyNum > 100) {
-        newErrors.concurrency = 'Concurrency must be between 1 and 100';
-      }
-
-      const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
-      if (!timeRegex.test(formData.retryInterval)) {
-        newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
-      }
-
-      // Validate Advanced Configurations (Concurrency Auto-Scaling) when enabled
-      if (formData.autoScaling?.enabled) {
-        if (!formData.autoScaling.groupName?.trim()) {
-          newErrors['autoScaling.groupName'] = 'Group Name is required when auto-scaling is enabled';
-        }
-
-        if (!formData.autoScaling.concurrentCallsPerOnlineAgent || 
-            formData.autoScaling.concurrentCallsPerOnlineAgent < 1 || 
-            formData.autoScaling.concurrentCallsPerOnlineAgent > 100) {
-          newErrors['autoScaling.concurrentCallsPerOnlineAgent'] = 'Concurrent Calls per Online Agent must be between 1 and 100';
-        }
-      }
-    }
-
-
-    if (step === 2) {
-      if (!formData.startDate) {
-        newErrors.startDate = 'Start date is required';
-      } else {
-        const today = getTodayDate();
-        if (formData.startDate < today) {
-          newErrors.startDate = 'Start date cannot be in the past';
-        }
-      }
-
-      if (!formData.endDate) {
-        newErrors.endDate = 'End date is required';
-      } else if (formData.startDate) {
-        if (formData.endDate <= formData.startDate) {
-          newErrors.endDate = 'End date must be after start date';
-        } else {
-          const maxEndDate = addOneYear(formData.startDate);
-          if (formData.endDate > maxEndDate) {
-            newErrors.endDate = 'Campaign duration cannot exceed 1 year';
-          }
-        }
-      }
-
-      const hasEnabledDays = Object.values(formData.schedule).some(day => day.enabled);
-      if (!hasEnabledDays) {
-        newErrors.schedule = 'At least one day must be selected';
-      }
-
-      Object.entries(formData.schedule).forEach(([dayKey, day]) => {
-        if (day.enabled) {
-          const startTime = new Date(`2000-01-01T${day.startTime}:00`);
-          const endTime = new Date(`2000-01-01T${day.endTime}:00`);
-          
-          if (startTime >= endTime) {
-            newErrors[`schedule-${dayKey}`] = 'End time must be after start time';
-          }
-        }
-      });
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData, isAdvancedConfigExpanded]);
-
-  const validateForm = useCallback((): boolean => {
-    return validateStep(1) && validateStep(2);
-  }, [validateStep]);
-
-  // Event handlers
-  const handleFormDataChange = useCallback((field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear related errors
-    if (hasAttemptedSubmit && errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [hasAttemptedSubmit, errors]);
-
-  const handleScheduleChange = useCallback((dayKey: string, field: keyof ScheduleDay, value: boolean | string) => {
-    setFormData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [dayKey]: {
-          ...prev.schedule[dayKey],
-          [field]: value
-        }
-      }
-    }));
-    
-    const errorKey = `schedule-${dayKey}`;
-    if (errors[errorKey]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[errorKey];
-        return newErrors;
-      });
-    }
-  }, [errors]);
-
-  const handleTimezoneSelect = useCallback((timezone: string) => {
-    setSelectedTimezone(timezone);
-    handleFormDataChange('timezone', timezone);
-    setIsTimezoneDropdownOpen(false);
-  }, [handleFormDataChange]);
-
-  const handlePhoneNumberSelect = useCallback((phoneNumberId: string) => {
-    handleFormDataChange('phoneNumber', phoneNumberId);
-    setIsPhoneNumberDropdownOpen(false);
-  }, [handleFormDataChange]);
-
-  const handleGroupSelect = useCallback((groupId: string) => {
-    handleFormDataChange('groupName', groupId);
-    setIsGroupDropdownOpen(false);
-  }, [handleFormDataChange]);
-
-  const handleNext = useCallback(() => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 2));
-    }
-  }, [currentStep, validateStep]);
-
-  const handlePrevious = useCallback(() => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-  }, []);
-
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    setHasAttemptedSubmit(true);
-    
-    if (validateForm()) {
-      onSubmit(formData);
-      setHasAttemptedSubmit(false);
-      setErrors({});
-      onClose();
-    }
-  }, [validateForm, onSubmit, formData, onClose]);
-
-  const toggleAdvancedConfig = useCallback(() => {
-    setIsAdvancedConfigExpanded(prev => !prev);
-  }, []);
-
-  // Effects
+  // Update schedule when date range changes
   useEffect(() => {
     if (formData.startDate && formData.endDate) {
       const daysInRange = getDaysInDateRange(formData.startDate, formData.endDate);
@@ -620,18 +268,10 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
           };
         }, {})
       }));
-    } else {
-      // Reset schedule when dates are cleared
-      setFormData(prev => ({
-        ...prev,
-        schedule: WEEKDAYS.reduce((acc, day) => ({
-          ...acc,
-          [day.key]: { enabled: false, startTime: '09:00', endTime: '17:00' }
-        }), {})
-      }));
     }
   }, [formData.startDate, formData.endDate]);
 
+  // Update current times for timezones
   useEffect(() => {
     const updateTimes = () => {
       const times: Record<string, string> = {};
@@ -642,18 +282,256 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     };
 
     updateTimes();
-    const interval = setInterval(updateTimes, 60000);
+    const interval = setInterval(updateTimes, 60000); // Update every minute
 
     return () => clearInterval(interval);
   }, []);
 
+  // Reset form state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setHasAttemptedSubmit(false);
-      setErrors({});
+      setSubmitErrors({});
+      setStepErrors({});
     }
   }, [isOpen]);
 
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (step === 1) {
+      // Campaign Info & Configurations validation
+      if (!formData.name.trim()) {
+        newErrors.name = 'Campaign name is required';
+      }
+
+      if (!formData.phoneNumber) {
+        newErrors.phoneNumber = 'Phone number selection is required';
+      }
+
+      if (!formData.ivr) {
+        newErrors.ivr = 'IVR selection is required';
+      }
+
+      if (formData.maxTries < 1 || formData.maxTries > 10) {
+        newErrors.maxTries = 'Maximum tries must be between 1 and 10';
+      }
+
+      if (formData.concurrency < 1 || formData.concurrency > 100) {
+        newErrors.concurrency = 'Concurrency must be between 1 and 100';
+      }
+
+      // Validate retry interval format (HH:MM:SS)
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
+      if (!timeRegex.test(formData.retryInterval)) {
+        newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
+      }
+    }
+
+    if (step === 2) {
+      // Schedule Configuration validation
+      // Validate start date
+      if (!formData.startDate) {
+        newErrors.startDate = 'Start date is required';
+      } else {
+        const today = getTodayDate();
+        if (formData.startDate < today) {
+          newErrors.startDate = 'Start date cannot be in the past';
+        }
+      }
+
+      // Validate end date
+      if (!formData.endDate) {
+        newErrors.endDate = 'End date is required';
+      } else if (formData.startDate) {
+        if (formData.endDate <= formData.startDate) {
+          newErrors.endDate = 'End date must be after start date';
+        } else {
+          // Check if end date is more than 1 year from start date
+          const maxEndDate = addOneYear(formData.startDate);
+          if (formData.endDate > maxEndDate) {
+            newErrors.endDate = 'Campaign duration cannot exceed 1 year';
+          }
+        }
+      }
+
+      const hasEnabledDays = Object.values(formData.schedule).some(day => day.enabled);
+      if (!hasEnabledDays) {
+        newErrors.schedule = 'At least one day must be selected';
+      }
+
+      // Validate time ranges for enabled days
+      Object.entries(formData.schedule).forEach(([dayKey, day]) => {
+        if (day.enabled) {
+          const startTime = new Date(`2000-01-01T${day.startTime}:00`);
+          const endTime = new Date(`2000-01-01T${day.endTime}:00`);
+          
+          if (startTime >= endTime) {
+            newErrors[`schedule-${dayKey}`] = 'End time must be after start time';
+          }
+        }
+      });
+    }
+
+    setStepErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Comprehensive form validation for submission
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Campaign Info & Configurations validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Campaign name is required';
+    }
+
+    if (!formData.phoneNumber) {
+      newErrors.phoneNumber = 'Phone number selection is required';
+    }
+
+    if (!formData.ivr) {
+      newErrors.ivr = 'IVR selection is required';
+    }
+
+    if (formData.maxTries < 1 || formData.maxTries > 10) {
+      newErrors.maxTries = 'Maximum tries must be between 1 and 10';
+    }
+
+    if (formData.concurrency < 1 || formData.concurrency > 100) {
+      newErrors.concurrency = 'Concurrency must be between 1 and 100';
+    }
+
+    // Validate retry interval format (HH:MM:SS)
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
+    if (!timeRegex.test(formData.retryInterval)) {
+      newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
+    }
+
+    // Schedule Configuration validation
+    if (!formData.startDate) {
+      newErrors.startDate = 'Start date is required';
+    } else {
+      const today = getTodayDate();
+      if (formData.startDate < today) {
+        newErrors.startDate = 'Start date cannot be in the past';
+      }
+    }
+
+    if (!formData.endDate) {
+      newErrors.endDate = 'End date is required';
+    } else if (formData.startDate) {
+      if (formData.endDate <= formData.startDate) {
+        newErrors.endDate = 'End date must be after start date';
+      } else {
+        const maxEndDate = addOneYear(formData.startDate);
+        if (formData.endDate > maxEndDate) {
+          newErrors.endDate = 'Campaign duration cannot exceed 1 year';
+        }
+      }
+    }
+
+    const hasEnabledDays = Object.values(formData.schedule).some(day => day.enabled);
+    if (!hasEnabledDays) {
+      newErrors.schedule = 'At least one day must be selected';
+    }
+
+    // Validate time ranges for enabled days
+    Object.entries(formData.schedule).forEach(([dayKey, day]) => {
+      if (day.enabled) {
+        const startTime = new Date(`2000-01-01T${day.startTime}:00`);
+        const endTime = new Date(`2000-01-01T${day.endTime}:00`);
+        
+        if (startTime >= endTime) {
+          newErrors[`schedule-${dayKey}`] = 'End time must be after start time';
+        }
+      }
+    });
+
+    setSubmitErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, 2));
+    }
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setHasAttemptedSubmit(true);
+    
+    if (validateForm()) {
+      onSubmit(formData);
+      // Reset form state
+      setHasAttemptedSubmit(false);
+      setSubmitErrors({});
+      setStepErrors({});
+      onClose();
+    }
+  };
+
+  const handleScheduleChange = (dayKey: string, field: keyof ScheduleDay, value: boolean | string) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule: {
+        ...prev.schedule,
+        [dayKey]: {
+          ...prev.schedule[dayKey],
+          [field]: value
+        }
+      }
+    }));
+    
+    // Clear any existing error for this day when making changes
+    if (stepErrors[`schedule-${dayKey}`]) {
+      setStepErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[`schedule-${dayKey}`];
+        return newErrors;
+      });
+    }
+    if (submitErrors[`schedule-${dayKey}`]) {
+      setSubmitErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[`schedule-${dayKey}`];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleTimezoneSelect = (timezone: string) => {
+    setSelectedTimezone(timezone);
+    setFormData(prev => ({ ...prev, timezone }));
+    setIsTimezoneDropdownOpen(false);
+  };
+
+  const handlePhoneNumberSelect = (phoneNumberId: string) => {
+    setFormData(prev => ({ ...prev, phoneNumber: phoneNumberId }));
+    setIsPhoneNumberDropdownOpen(false);
+  };
+
+  // Clear IVR error when user selects an IVR (only after submit attempt)
+  const handleIvrChange = (value: string) => {
+    setFormData(prev => ({ ...prev, ivr: value }));
+    if (hasAttemptedSubmit && submitErrors.ivr && value) {
+      setSubmitErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.ivr;
+        return newErrors;
+      });
+    }
+  };
+
+  // Get selected phone number
+  const selectedPhoneNumber = PHONE_NUMBERS.find(phone => phone.id === formData.phoneNumber);
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -663,19 +541,95 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       if (!target.closest('.phone-number-dropdown-container')) {
         setIsPhoneNumberDropdownOpen(false);
       }
-      if (!target.closest('.group-dropdown-container')) {
-        setIsGroupDropdownOpen(false);
-      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Helper function to get error
-  const getError = useCallback((field: string) => {
-    return errors[field];
-  }, [errors]);
+  // Enhanced Time Input Component - Fixed to 12h format
+  const TimeSlotInput: React.FC<{
+    dayKey: string;
+    type: 'start' | 'end';
+    value: string;
+    enabled: boolean;
+    onChange: (value: string) => void;
+  }> = ({ dayKey, type, value, enabled, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    
+    const handleTimeChange = (newTime: string) => {
+      const time24 = convertTo24Hour(newTime);
+      onChange(time24);
+      setIsOpen(false);
+    };
+
+    const commonTimes = [
+      '12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM',
+      '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
+      '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
+      '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'
+    ];
+
+    return (
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => enabled && setIsOpen(!isOpen)}
+          disabled={!enabled}
+          className={`
+            w-36 px-4 py-3 text-sm border rounded-lg transition-all duration-200 text-left
+            ${enabled 
+              ? 'border-gray-300 bg-white text-gray-900 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 cursor-pointer' 
+              : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+            }
+            ${stepErrors[`schedule-${dayKey}`] || submitErrors[`schedule-${dayKey}`] ? 'border-red-300' : ''}
+          `}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-medium">
+              {formatTo12Hour(value)}
+            </span>
+            {enabled && (
+              <Clock className="w-4 h-4 text-gray-400" />
+            )}
+          </div>
+        </button>
+
+        {isOpen && enabled && (
+          <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+            <div className="p-2">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 px-2">
+                {type === 'start' ? 'Start Time' : 'End Time'}
+              </div>
+              <div className="space-y-1">
+                {commonTimes.map(time => (
+                  <button
+                    key={time}
+                    type="button"
+                    onClick={() => handleTimeChange(time)}
+                    className={`
+                      w-full px-3 py-2 text-left text-sm rounded hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200
+                      ${formatTo12Hour(value) === time ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700'}
+                    `}
+                  >
+                    {time}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Helper function to get the appropriate error for display
+  const getError = (field: string) => {
+    if (hasAttemptedSubmit && submitErrors[field]) {
+      return submitErrors[field];
+    }
+    return stepErrors[field];
+  };
 
   if (!isOpen) return null;
 
@@ -695,12 +649,15 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
         <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="p-6">
-            <StepIndicator currentStep={currentStep} />
-
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Step 1: Campaign Info & Configurations */}
               {currentStep === 1 && (
                 <div className="space-y-8">
+                  {/* Updated subtitle */}
+                  <div className="text-center">
+                    <p className="text-body-small">Campaign Info & Configurations</p>
+                  </div>
+
                   {/* Basic Information Section */}
                   <div className="space-y-6">
                     <h3 className="text-heading-3 flex items-center">
@@ -717,7 +674,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           id="campaign-name"
                           type="text"
                           value={formData.name}
-                          onChange={(e) => handleFormDataChange('name', e.target.value)}
+                          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                           className="form-input"
                           placeholder="Enter campaign name"
                           aria-describedby={getError('name') ? "name-error" : undefined}
@@ -770,32 +727,26 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
                           {isPhoneNumberDropdownOpen && (
                             <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                              {PHONE_NUMBERS.map((phone, index) => {
-                                const isSelected = formData.phoneNumber === phone.id;
-                                const isLast = index === PHONE_NUMBERS.length - 1;
-                                const buttonClasses = `w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
-                                  !isLast ? 'border-b border-gray-100' : ''
-                                } ${
-                                  isSelected ? 'bg-blue-50 text-blue-700' : ''
-                                }`;
-
-                                return (
-                                  <button
-                                    key={phone.id}
-                                    type="button"
-                                    onClick={() => handlePhoneNumberSelect(phone.id)}
-                                    className={buttonClasses}
-                                  >
-                                    <div className="flex items-center">
-                                      <span className="text-lg mr-3">{phone.flag}</span>
-                                      <span className="font-medium">{phone.formatted}</span>
-                                    </div>
-                                    {isSelected && (
-                                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                                    )}
-                                  </button>
-                                );
-                              })}
+                              {PHONE_NUMBERS.map((phone, index) => (
+                                <button
+                                  key={phone.id}
+                                  type="button"
+                                  onClick={() => handlePhoneNumberSelect(phone.id)}
+                                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
+                                    index !== PHONE_NUMBERS.length - 1 ? 'border-b border-gray-100' : ''
+                                  } ${
+                                    formData.phoneNumber === phone.id ? 'bg-blue-50 text-blue-700' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center">
+                                    <span className="text-lg mr-3">{phone.flag}</span>
+                                    <span className="font-medium">{phone.formatted}</span>
+                                  </div>
+                                  {formData.phoneNumber === phone.id && (
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                  )}
+                                </button>
+                              ))}
                             </div>
                           )}
                         </div>
@@ -827,7 +778,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         <select
                           id="ivr-select"
                           value={formData.ivr}
-                          onChange={(e) => handleFormDataChange('ivr', e.target.value)}
+                          onChange={(e) => handleIvrChange(e.target.value)}
                           className={`form-select h-12 ${
                             getError('ivr') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                           }`}
@@ -857,7 +808,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           min="1"
                           max="100"
                           value={formData.concurrency}
-                          onChange={(e) => handleFormDataChange('concurrency', parseInt(e.target.value) || 1)}
+                          onChange={(e) => setFormData(prev => ({ ...prev, concurrency: parseInt(e.target.value) || 1 }))}
                           className="form-input h-12"
                           aria-describedby={getError('concurrency') ? "concurrency-error" : undefined}
                         />
@@ -881,7 +832,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           min="1"
                           max="10"
                           value={formData.maxTries}
-                          onChange={(e) => handleFormDataChange('maxTries', parseInt(e.target.value) || 1)}
+                          onChange={(e) => setFormData(prev => ({ ...prev, maxTries: parseInt(e.target.value) || 1 }))}
                           className="form-input h-12"
                           aria-describedby={getError('maxTries') ? "max-tries-error" : undefined}
                         />
@@ -895,177 +846,13 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       <div>
                         <TimePicker
                           value={formData.retryInterval}
-                          onChange={(value) => handleFormDataChange('retryInterval', value)}
+                          onChange={(value) => setFormData(prev => ({ ...prev, retryInterval: value }))}
                           label="Retry Interval"
                           error={getError('retryInterval')}
                           helperText="Time to wait between retry attempts"
                           required
                         />
                       </div>
-                    </div>
-
-                    {/* Advanced Configurations Section */}
-                    <div className="border border-gray-200 rounded-lg">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Settings className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-900">
-                              Advanced Concurrency Settings <span className="text-gray-500 font-normal">(optional)</span>
-                            </h4>
-                            <p className="text-xs text-gray-600 mt-1">
-                              Automate the number of concurrent outbound calls based on the number of online agents
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Toggle Button */}
-                        <button
-                          type="button"
-                          onClick={() => formData.ivr && setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
-                          className={`
-                            relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                            ${!formData.ivr 
-                              ? 'bg-gray-200 cursor-not-allowed' 
-                              : isAdvancedConfigExpanded 
-                                ? 'bg-blue-600' 
-                                : 'bg-gray-300'
-                            }
-                          `}
-                          disabled={!formData.ivr}
-                          role="switch"
-                          aria-checked={isAdvancedConfigExpanded}
-                          aria-label={!formData.ivr ? "Select an IVR to enable concurrency auto-scaling" : "Toggle concurrency auto-scaling"}
-                        >
-                          <span
-                            className={`
-                              inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out
-                              ${!formData.ivr 
-                                ? 'translate-x-1' 
-                                : isAdvancedConfigExpanded 
-                                  ? 'translate-x-6' 
-                                  : 'translate-x-1'
-                              }
-                            `}
-                          />
-                        </button>
-                      </div>
-                      
-                      {/* IVR Required Message */}
-                      {!formData.ivr && (
-                        <div className="flex items-start space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                          <p className="text-sm text-amber-800">
-                            <span className="font-medium">IVR selection required:</span> Please select an IVR in the configuration above to enable concurrency auto-scaling options.
-                          </p>
-                        </div>
-                      )}
-
-                      {isAdvancedConfigExpanded && formData.ivr && (
-                        <div className="px-6 pb-6 border-t border-gray-200 bg-gray-50">
-                          <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Group Name Selection */}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Group Name
-                              </label>
-                              <div className="relative group-dropdown-container">
-                                <button
-                                  type="button"
-                                  onClick={() => setIsGroupDropdownOpen(!isGroupDropdownOpen)}
-                                  className="w-full form-input text-left flex items-center justify-between"
-                                >
-                                  <span className={selectedGroup ? 'text-gray-900' : 'text-gray-400'}>
-                                    {selectedGroup ? (
-                                      <div className="flex items-center justify-between w-full">
-                                        <span className="font-medium">{selectedGroup.name}</span>
-                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                                          {selectedGroup.agentCount} agents
-                                        </span>
-                                      </div>
-                                    ) : (
-                                      'Select group'
-                                    )}
-                                  </span>
-                                  {isGroupDropdownOpen ? (
-                                    <ChevronUp className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
-                                  ) : (
-                                    <ChevronDown className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
-                                  )}
-                                </button>
-
-                                {isGroupDropdownOpen && (
-                                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleGroupSelect('')}
-                                      className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-500 border-b border-gray-100 transition-colors duration-200"
-                                    >
-                                      No group selected
-                                    </button>
-                                    {activeGroups.map((group, index) => {
-                                      const isSelected = formData.groupName === group.id;
-                                      const isLast = index === activeGroups.length - 1;
-                                      const buttonClasses = `w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between transition-colors duration-200 ${
-                                        !isLast ? 'border-b border-gray-100' : ''
-                                      } ${
-                                        isSelected ? 'bg-blue-50 text-blue-700' : ''
-                                      }`;
-
-                                      return (
-                                        <button
-                                          key={group.id}
-                                          type="button"
-                                          onClick={() => handleGroupSelect(group.id)}
-                                          className={buttonClasses}
-                                        >
-                                          <div>
-                                            <div className="font-medium">{group.name}</div>
-                                            <div className="text-xs text-gray-500">
-                                              {group.agentCount} agents
-                                            </div>
-                                          </div>
-                                          {isSelected && (
-                                            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                                          )}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Assign campaign to a specific agent group
-                              </p>
-                            </div>
-
-                            {/* Concurrent Calls per Online Agent */}
-                            <div>
-                              <label htmlFor="concurrent-calls-per-agent" className="block text-sm font-medium text-gray-700 mb-2">
-                                Concurrent Calls per Online Agent
-                              </label>
-                              <input
-                                id="concurrent-calls-per-agent"
-                                type="number"
-                                min="1"
-                                max="50"
-                                value={formData.concurrentCallsPerAgent}
-                                onChange={(e) => handleFormDataChange('concurrentCallsPerAgent', parseInt(e.target.value) || 1)}
-                                className="form-input h-12"
-                                aria-describedby={getError('concurrentCallsPerAgent') ? "concurrent-calls-per-agent-error" : undefined}
-                              />
-                              {getError('concurrentCallsPerAgent') && (
-                                <p id="concurrent-calls-per-agent-error" className="text-red-500 text-sm mt-1">
-                                  {getError('concurrentCallsPerAgent')}
-                                </p>
-                              )}
-                              <p className="text-xs text-gray-500 mt-1">
-                                Maximum simultaneous calls per online agent
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1074,6 +861,11 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
               {/* Step 2: Schedule Configuration */}
               {currentStep === 2 && (
                 <div className="space-y-6">
+                  {/* Updated subtitle */}
+                  <div className="text-center">
+                    <p className="text-body-small">Schedule Configuration</p>
+                  </div>
+
                   <h3 className="text-heading-3 flex items-center">
                     <Calendar className="w-5 h-5 mr-2 text-blue-600" />
                     Schedule Configuration
@@ -1084,9 +876,17 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     <DatePicker
                       value={formData.startDate}
                       onChange={(value) => {
-                        handleFormDataChange('startDate', value);
-                        if (errors.endDate) {
-                          setErrors(prev => {
+                        setFormData(prev => ({ ...prev, startDate: value }));
+                        // Clear end date error when start date changes
+                        if (stepErrors.endDate) {
+                          setStepErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.endDate;
+                            return newErrors;
+                          });
+                        }
+                        if (submitErrors.endDate) {
+                          setSubmitErrors(prev => {
                             const newErrors = { ...prev };
                             delete newErrors.endDate;
                             return newErrors;
@@ -1102,7 +902,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
                     <DatePicker
                       value={formData.endDate}
-                      onChange={(value) => handleFormDataChange('endDate', value)}
+                      onChange={(value) => setFormData(prev => ({ ...prev, endDate: value }))}
                       label="End Date"
                       error={getError('endDate')}
                       helperText="Campaign will end on this date (max 1 year duration)"
@@ -1141,26 +941,21 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
                       {isTimezoneDropdownOpen && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                          {TIMEZONES.map(timezone => {
-                            const isSelected = selectedTimezone === timezone.value;
-                            const buttonClasses = `w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between ${
-                              isSelected ? 'bg-blue-50 text-blue-700' : ''
-                            }`;
-
-                            return (
-                              <button
-                                key={timezone.value}
-                                type="button"
-                                onClick={() => handleTimezoneSelect(timezone.value)}
-                                className={buttonClasses}
-                              >
-                                <span>{timezone.label}</span>
-                                <span className="text-gray-500 font-mono text-sm">
-                                  {currentTimes[timezone.value]}
-                                </span>
-                              </button>
-                            );
-                          })}
+                          {TIMEZONES.map(timezone => (
+                            <button
+                              key={timezone.value}
+                              type="button"
+                              onClick={() => handleTimezoneSelect(timezone.value)}
+                              className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between ${
+                                selectedTimezone === timezone.value ? 'bg-blue-50 text-blue-700' : ''
+                              }`}
+                            >
+                              <span>{timezone.label}</span>
+                              <span className="text-gray-500 font-mono text-sm">
+                                {currentTimes[timezone.value]}
+                              </span>
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -1180,7 +975,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           <div className="flex items-start space-x-2">
                             <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                             <div className="text-sm text-blue-800">
-                              <p className="font-medium mb-1">Weekdays filtered for selected date range</p>
+                              <p className="font-medium mb-1">Schedule automatically updated for date range</p>
                               <p className="text-blue-700">
                                 Campaign runs from{' '}
                                 <span className="font-medium">
@@ -1202,7 +997,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                 </span>
                               </p>
                               <p className="text-xs text-blue-600 mt-1">
-                                Only weekdays that occur within this range are shown below.
+                                Only days within this range are enabled and selected below.
                               </p>
                             </div>
                           </div>
@@ -1212,11 +1007,11 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       <div className="space-y-4">
                         {WEEKDAYS.map(day => {
                           const isDayInDateRange = formData.startDate && formData.endDate 
-                            ? getDaysInDateRange(formData.startDate, formData.endDate).has(day.dayIndex)
+                            ? isDayInRange(day.dayIndex, formData.startDate, formData.endDate)
                             : true;
                           
-                          if (!isDayInDateRange) return null;
-                          
+                          const isDisabledByDateRange = formData.startDate && formData.endDate && !isDayInDateRange;
+
                           return (
                             <div key={day.key} className="space-y-2">
                               <div className="flex items-center justify-between">
@@ -1227,29 +1022,38 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     id={`schedule-${day.key}`}
                                     checked={formData.schedule[day.key].enabled}
                                     onChange={(e) => handleScheduleChange(day.key, 'enabled', e.target.checked)}
-                                    className="w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 text-blue-600 cursor-pointer"
+                                    disabled={isDisabledByDateRange}
+                                    className={`w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ${
+                                      isDisabledByDateRange 
+                                        ? 'text-gray-300 cursor-not-allowed' 
+                                        : 'text-blue-600 cursor-pointer'
+                                    }`}
                                   />
                                   <label 
                                     htmlFor={`schedule-${day.key}`} 
-                                    className={`ml-3 text-sm font-medium select-none cursor-pointer ${
-                                      formData.schedule[day.key].enabled
-                                        ? 'text-gray-900'
-                                        : 'text-gray-600'
+                                    className={`ml-3 text-sm font-medium select-none ${
+                                      isDisabledByDateRange 
+                                        ? 'text-gray-400 cursor-not-allowed' 
+                                        : formData.schedule[day.key].enabled
+                                          ? 'text-gray-900 cursor-pointer'
+                                          : 'text-gray-600 cursor-pointer'
                                     }`}
                                   >
                                     {day.label}
+                                    {isDisabledByDateRange && (
+                                      <span className="ml-2 text-xs text-gray-400">(not in date range)</span>
+                                    )}
                                   </label>
                                 </div>
 
-                                {/* Time range inputs */}
+                                {/* Enhanced Time range inputs */}
                                 <div className="flex items-center space-x-3">
                                   <TimeSlotInput
                                     dayKey={day.key}
                                     type="start"
                                     value={formData.schedule[day.key].startTime}
-                                    enabled={formData.schedule[day.key].enabled}
+                                    enabled={formData.schedule[day.key].enabled && !isDisabledByDateRange}
                                     onChange={(value) => handleScheduleChange(day.key, 'startTime', value)}
-                                    hasError={!!getError(`schedule-${day.key}`)}
                                   />
                                   
                                   <span className="text-gray-400 text-sm font-medium px-2">to</span>
@@ -1258,9 +1062,8 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     dayKey={day.key}
                                     type="end"
                                     value={formData.schedule[day.key].endTime}
-                                    enabled={formData.schedule[day.key].enabled}
+                                    enabled={formData.schedule[day.key].enabled && !isDisabledByDateRange}
                                     onChange={(value) => handleScheduleChange(day.key, 'endTime', value)}
-                                    hasError={!!getError(`schedule-${day.key}`)}
                                   />
                                 </div>
                               </div>
@@ -1273,50 +1076,19 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           );
                         })}
                       </div>
-                      
-                      {/* Show message when no days are available */}
-                      {(() => {
-                        const filteredWeekdays = getFilteredWeekdays(formData.startDate, formData.endDate);
-                        
-                        if (filteredWeekdays.length === 0) {
-                          return (
-                            <div className="text-center py-4 mt-4 border-t border-gray-200">
-                              <div className="flex flex-col items-center space-y-3">
-                                <Calendar className="w-12 h-12 text-gray-400" />
-                                <div className="text-gray-600">
-                                  <p className="font-medium">
-                                    {formData.startDate && formData.endDate 
-                                      ? 'No weekdays available' 
-                                      : 'Select campaign dates'
-                                    }
-                                  </p>
-                                  <p className="text-sm text-gray-500 mt-1">
-                                    {formData.startDate && formData.endDate 
-                                      ? 'The selected date range does not contain any complete weekdays. Please adjust your start and end dates.'
-                                      : 'Choose start and end dates above to configure your weekly schedule.'
-                                    }
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        }
-                        
-                        return null;
-                      })()}
+                    </div>
                     
                     {getError('schedule') && <p className="text-red-500 text-sm">{getError('schedule')}</p>}
                     <div className="flex items-start space-x-2">
                       <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-gray-600">
                         {formData.startDate && formData.endDate ? (
-                          'Only weekdays that occur within your selected campaign date range are displayed. You can customize the time slots for each available day.'
+                          'Days are automatically selected based on your campaign date range. Only days that occur within the selected dates are enabled.'
                         ) : (
-                          'Select campaign start and end dates above to see available weekdays. You can then customize the time slots for each day.'
+                          'Select campaign start and end dates above to automatically enable relevant days. You can then customize the time slots for each enabled day.'
                         )}
                       </p>
                     </div>
-                  </div>
                   </div>
                 </div>
               )}
