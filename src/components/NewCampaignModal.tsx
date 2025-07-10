@@ -1261,37 +1261,89 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       <div className="space-y-4">
                         {WEEKDAYS.map(day => {
                           const isDayInDateRange = formData.startDate && formData.endDate 
+                            ? getDaysInDateRange(formData.startDate, formData.endDate).has(day.dayIndex)
+                            : true;
+                          
+                          if (!isDayInDateRange) return null;
+                          
+                          return (
+                            <div key={day.key} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                {/* Day name and checkbox */}
+                                <div className="flex items-center min-w-[120px]">
+                                  <input
+                                    type="checkbox"
+                                    id={`schedule-${day.key}`}
+                                    checked={formData.schedule[day.key].enabled}
+                                    onChange={(e) => handleScheduleChange(day.key, 'enabled', e.target.checked)}
+                                    className="w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 text-blue-600 cursor-pointer"
+                                  />
+                                  <label 
+                                    htmlFor={`schedule-${day.key}`} 
+                                    className={`ml-3 text-sm font-medium select-none cursor-pointer ${
+                                      formData.schedule[day.key].enabled
+                                        ? 'text-gray-900'
+                                        : 'text-gray-600'
+                                    }`}
+                                  >
+                                    {day.label}
+                                  </label>
+                                </div>
+
+                                {/* Time range inputs */}
+                                <div className="flex items-center space-x-3">
+                                  <TimeSlotInput
+                                    dayKey={day.key}
+                                    type="start"
+                                    value={formData.schedule[day.key].startTime}
+                                    enabled={formData.schedule[day.key].enabled}
+                                    onChange={(value) => handleScheduleChange(day.key, 'startTime', value)}
+                                    hasError={!!getError(`schedule-${day.key}`)}
+                                  />
+                                  
+                                  <span className="text-gray-400 text-sm font-medium px-2">to</span>
+                                  
+                                  <TimeSlotInput
+                                    dayKey={day.key}
+                                    type="end"
+                                    value={formData.schedule[day.key].endTime}
+                                    enabled={formData.schedule[day.key].enabled}
+                                    onChange={(value) => handleScheduleChange(day.key, 'endTime', value)}
+                                    hasError={!!getError(`schedule-${day.key}`)}
+                                  />
+                                </div>
+                              </div>
+                              
+                              {/* Error message for this specific day */}
+                              {getError(`schedule-${day.key}`) && (
+                                <p className="text-red-500 text-xs ml-7">{getError(`schedule-${day.key}`)}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Show message when no days are available */}
                       {(() => {
                         const filteredWeekdays = getFilteredWeekdays(formData.startDate, formData.endDate);
                         
-                        if (filteredWeekdays.length === 0 && formData.startDate && formData.endDate) {
-                          return (
-                            <div className="text-center py-8">
-                              <div className="flex flex-col items-center space-y-3">
-                                <Calendar className="w-12 h-12 text-gray-400" />
-                                <div className="text-gray-600">
-                                  <p className="font-medium">No weekdays available</p>
-                                  <p className="text-sm text-gray-500 mt-1">
-                                    The selected date range does not contain any complete weekdays.
-                                  </p>
-                                  <p className="text-xs text-gray-400 mt-2">
-                                    Please adjust your start and end dates to include at least one full day.
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        }
-                        
                         if (filteredWeekdays.length === 0) {
                           return (
-                            <div className="text-center py-8">
+                            <div className="text-center py-4 mt-4 border-t border-gray-200">
                               <div className="flex flex-col items-center space-y-3">
                                 <Calendar className="w-12 h-12 text-gray-400" />
                                 <div className="text-gray-600">
-                                  <p className="font-medium">Select campaign dates</p>
+                                  <p className="font-medium">
+                                    {formData.startDate && formData.endDate 
+                                      ? 'No weekdays available' 
+                                      : 'Select campaign dates'
+                                    }
+                                  </p>
                                   <p className="text-sm text-gray-500 mt-1">
-                                    Choose start and end dates above to configure your weekly schedule.
+                                    {formData.startDate && formData.endDate 
+                                      ? 'The selected date range does not contain any complete weekdays. Please adjust your start and end dates.'
+                                      : 'Choose start and end dates above to configure your weekly schedule.'
+                                    }
                                   </p>
                                 </div>
                               </div>
@@ -1299,64 +1351,8 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           );
                         }
                         
-                        return (
-                          <div className="space-y-4">
-                            {filteredWeekdays.map(day => (
-                              <div key={day.key} className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  {/* Day name and checkbox */}
-                                  <div className="flex items-center min-w-[120px]">
-                                    <input
-                                      type="checkbox"
-                                      id={`schedule-${day.key}`}
-                                      checked={formData.schedule[day.key].enabled}
-                                      onChange={(e) => handleScheduleChange(day.key, 'enabled', e.target.checked)}
-                                      className="w-4 h-4 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 text-blue-600 cursor-pointer"
-                                    />
-                                    <label 
-                                      htmlFor={`schedule-${day.key}`} 
-                                      className={`ml-3 text-sm font-medium select-none cursor-pointer ${
-                                        formData.schedule[day.key].enabled
-                                          ? 'text-gray-900'
-                                          : 'text-gray-600'
-                                      }`}
-                                    >
-                                      {day.label}
-                                    </label>
-                                  </div>
-
-                                  {/* Time range inputs */}
-                                  <div className="flex items-center space-x-3">
-                                    <TimeSlotInput
-                                      dayKey={day.key}
-                                      type="start"
-                                      value={formData.schedule[day.key].startTime}
-                                      enabled={formData.schedule[day.key].enabled}
-                                      onChange={(value) => handleScheduleChange(day.key, 'startTime', value)}
-                                    />
-                                    
-                                    <span className="text-gray-400 text-sm font-medium px-2">to</span>
-                                    
-                                    <TimeSlotInput
-                                      dayKey={day.key}
-                                      type="end"
-                                      value={formData.schedule[day.key].endTime}
-                                      enabled={formData.schedule[day.key].enabled}
-                                      onChange={(value) => handleScheduleChange(day.key, 'endTime', value)}
-                                    />
-                                  </div>
-                                </div>
-                                
-                                {/* Error message for this specific day */}
-                                {getError(`schedule-${day.key}`) && (
-                                  <p className="text-red-500 text-xs ml-7">{getError(`schedule-${day.key}`)}</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        );
+                        return null;
                       })()}
-                    </div>
                     
                     {getError('schedule') && <p className="text-red-500 text-sm">{getError('schedule')}</p>}
                     <div className="flex items-start space-x-2">
