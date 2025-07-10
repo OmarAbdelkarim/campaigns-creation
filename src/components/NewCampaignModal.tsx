@@ -1173,9 +1173,32 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     year: 'numeric'
                                   })}
                                 </span>
+                            <p className="font-medium mb-2">Campaign Outbound Calls Management</p>
+                            <div className="text-blue-700 space-y-2">
+                              <p>
+                                The number of concurrent calls in your campaign is automatically calculated based on:
                               </p>
-                              <p className="text-xs text-blue-600 mt-1">
-                                Only days within this range are enabled and selected below.
+                              <ol className="list-decimal list-inside space-y-1 ml-2">
+                                <li>The number of online agents in your selected group</li>
+                                <li>The "Concurrent Calls per Online Agent" setting</li>
+                              </ol>
+                              
+                              <div className="bg-blue-100 border border-blue-200 rounded-lg p-3 mt-3">
+                                <p className="font-medium text-blue-800 mb-1">Example:</p>
+                                <p className="text-blue-700 text-sm">
+                                  If your group has 2 online agents and you set "Concurrent Calls per Online Agent" to 1:
+                                </p>
+                                <p className="text-blue-700 text-sm font-medium">
+                                  • Total concurrent calls = 2 agents × 1 call per agent = 2 concurrent calls
+                                </p>
+                              </div>
+                              
+                              <p className="text-sm">
+                                This dynamic scaling ensures optimal call distribution and prevents agent overload while maintaining campaign efficiency.
+                              </p>
+                              
+                              <p className="text-xs text-blue-600 font-medium">
+                                Note: The system continuously monitors agent availability and adjusts concurrent calls in real-time.
                               </p>
                             </div>
                           </div>
