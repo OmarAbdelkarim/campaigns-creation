@@ -1096,37 +1096,26 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                       <Globe className="w-4 h-4 inline mr-1" />
                       Timezone
                     </label>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Settings className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-900">Advanced Configurations</h4>
-                            <p className="text-xs text-gray-500">Additional settings for campaign behavior</p>
-                          </div>
-                        </div>
-                        
-                        {/* Toggle Switch */}
-                        <button
-                          type="button"
-                          onClick={() => setIsAdvancedConfigOpen(!isAdvancedConfigOpen)}
-                          className={`
-                            relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                            ${isAdvancedConfigOpen ? 'bg-blue-600' : 'bg-gray-200'}
-                          `}
-                          role="switch"
-                          aria-checked={isAdvancedConfigOpen}
-                          aria-labelledby="advanced-config-label"
-                        >
-                          <span
-                            className={`
-                              inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out
-                              ${isAdvancedConfigOpen ? 'translate-x-6' : 'translate-x-1'}
-                            `}
-                          />
-                        </button>
-                      </div>
+                    <div className="relative timezone-dropdown-container">
+                      <button
+                        type="button"
+                        onClick={() => setIsTimezoneDropdownOpen(!isTimezoneDropdownOpen)}
+                        className="w-full form-input text-left flex items-center justify-between"
+                      >
+                        <span>
+                          {TIMEZONES.find(tz => tz.value === selectedTimezone)?.label || selectedTimezone}
+                          {currentTimes[selectedTimezone] && (
+                            <span className="ml-2 text-gray-500 font-mono">
+                              ({currentTimes[selectedTimezone]})
+                            </span>
+                          )}
+                        </span>
+                        {isTimezoneDropdownOpen ? (
+                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
 
                       {isTimezoneDropdownOpen && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
