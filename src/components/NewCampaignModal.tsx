@@ -338,47 +338,6 @@ const StepIndicator = React.memo<{
     'Campaign Info & Configurations',
     'Schedule Configuration'
   ], []);
-
-  return (
-    <div className="flex items-center justify-center mb-8">
-      <div className="flex items-center space-x-4">
-        {[1, 2].map((step) => {
-          const isActive = currentStep >= step;
-          const circleClasses = isActive 
-            ? 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 bg-blue-600 text-white'
-            : 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 bg-gray-200 text-gray-600';
-          const labelClasses = isActive 
-            ? 'font-medium text-blue-600'
-            : 'font-medium text-gray-500';
-          const lineClasses = currentStep > step 
-            ? 'w-12 h-0.5 transition-all duration-200 bg-blue-600'
-            : 'w-12 h-0.5 transition-all duration-200 bg-gray-200';
-
-          return (
-            <React.Fragment key={step}>
-              <div className="flex items-center">
-                <div className={circleClasses}>
-                  {step}
-                </div>
-                <div className="ml-3 text-sm">
-                  <div className={labelClasses}>
-                    {stepLabels[step - 1]}
-                  </div>
-                </div>
-              </div>
-              {step < 2 && (
-                <div className={lineClasses} />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
-    </div>
-  );
-});
-
-StepIndicator.displayName = 'StepIndicator';
-
 export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   isOpen,
   onClose,
@@ -695,7 +654,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
 
         <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="p-6">
-            <StepIndicator currentStep={currentStep} />
 
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Step 1: Campaign Info & Configurations */}
@@ -705,7 +663,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                   <div className="space-y-6">
                     <h3 className="text-heading-3 flex items-center">
                       <Phone className="w-5 h-5 mr-2 text-blue-600" />
-                      Basic Information
+                      Campaign Info & Configurations
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
