@@ -31,6 +31,11 @@ interface Campaign {
   concurrency?: number;
   totalCalls?: number;
   answeredCalls?: number;
+  autoScaling?: {
+    enabled: boolean;
+    groupName: string;
+    concurrentCallsPerOnlineAgent: number;
+  };
 }
 
 interface ScheduleDay {
@@ -56,6 +61,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 5,
     totalCalls: 2847,
     answeredCalls: 1923,
+    autoScaling: {
+      enabled: false,
+      groupName: '',
+      concurrentCallsPerOnlineAgent: 1
+    },
     schedule: {
       monday: { enabled: true, startTime: '09:00', endTime: '17:00' },
       tuesday: { enabled: true, startTime: '09:00', endTime: '17:00' },
@@ -82,6 +92,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 3,
     totalCalls: 1654,
     answeredCalls: 892,
+    autoScaling: {
+      enabled: true,
+      groupName: 'Sales Team',
+      concurrentCallsPerOnlineAgent: 2
+    },
     schedule: {
       monday: { enabled: true, startTime: '08:00', endTime: '18:00' },
       tuesday: { enabled: true, startTime: '08:00', endTime: '18:00' },
@@ -108,6 +123,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 8,
     totalCalls: 4523,
     answeredCalls: 3187,
+    autoScaling: {
+      enabled: false,
+      groupName: '',
+      concurrentCallsPerOnlineAgent: 1
+    },
     schedule: {
       monday: { enabled: true, startTime: '10:00', endTime: '19:00' },
       tuesday: { enabled: true, startTime: '10:00', endTime: '19:00' },
@@ -134,6 +154,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 2,
     totalCalls: 0,
     answeredCalls: 0,
+    autoScaling: {
+      enabled: false,
+      groupName: '',
+      concurrentCallsPerOnlineAgent: 1
+    },
     schedule: {
       monday: { enabled: true, startTime: '09:00', endTime: '17:00' },
       tuesday: { enabled: true, startTime: '09:00', endTime: '17:00' },
@@ -160,6 +185,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 4,
     totalCalls: 1234,
     answeredCalls: 567,
+    autoScaling: {
+      enabled: false,
+      groupName: '',
+      concurrentCallsPerOnlineAgent: 1
+    },
     schedule: {
       monday: { enabled: true, startTime: '08:30', endTime: '17:30' },
       tuesday: { enabled: true, startTime: '08:30', endTime: '17:30' },
@@ -186,6 +216,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 6,
     totalCalls: 1876,
     answeredCalls: 1314,
+    autoScaling: {
+      enabled: false,
+      groupName: '',
+      concurrentCallsPerOnlineAgent: 1
+    },
     schedule: {
       monday: { enabled: true, startTime: '09:00', endTime: '18:00' },
       tuesday: { enabled: true, startTime: '09:00', endTime: '18:00' },
@@ -212,6 +247,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 7,
     totalCalls: 3456,
     answeredCalls: 1987,
+    autoScaling: {
+      enabled: false,
+      groupName: '',
+      concurrentCallsPerOnlineAgent: 1
+    },
     schedule: {
       monday: { enabled: true, startTime: '07:00', endTime: '19:00' },
       tuesday: { enabled: true, startTime: '07:00', endTime: '19:00' },
@@ -238,6 +278,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 3,
     totalCalls: 2134,
     answeredCalls: 1456,
+    autoScaling: {
+      enabled: false,
+      groupName: '',
+      concurrentCallsPerOnlineAgent: 1
+    },
     schedule: {
       monday: { enabled: true, startTime: '09:00', endTime: '17:00' },
       tuesday: { enabled: true, startTime: '09:00', endTime: '17:00' },
@@ -264,6 +309,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 5,
     totalCalls: 2987,
     answeredCalls: 1834,
+    autoScaling: {
+      enabled: false,
+      groupName: '',
+      concurrentCallsPerOnlineAgent: 1
+    },
     schedule: {
       monday: { enabled: true, startTime: '08:00', endTime: '16:00' },
       tuesday: { enabled: true, startTime: '08:00', endTime: '16:00' },
@@ -290,6 +340,11 @@ const mockCampaigns: Campaign[] = [
     concurrency: 4,
     totalCalls: 1567,
     answeredCalls: 823,
+    autoScaling: {
+      enabled: false,
+      groupName: '',
+      concurrentCallsPerOnlineAgent: 1
+    },
     schedule: {
       monday: { enabled: true, startTime: '10:00', endTime: '18:00' },
       tuesday: { enabled: true, startTime: '10:00', endTime: '18:00' },
