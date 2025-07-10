@@ -653,14 +653,11 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                     onClick={() => handleTimeChange(time)}
                     className={`
                       w-full px-3 py-2 text-left text-sm rounded hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200
-                      ${formatTo12Hour(value) === time ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700'}
-                    `}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div>
+            <h2 className="text-heading-2">Create New Campaign</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {currentStep === 1 ? 'Campaign Info & Configurations' : 'Schedule Configuration'}
+            </p>
           </div>
         )}
       </div>
@@ -732,42 +729,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
           </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="p-6">
-            <StepIndicator />
-
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Step 1: Campaign Info & Configurations */}
-              {currentStep === 1 && (
-                <div className="space-y-8">
-                  {/* Basic Information Section */}
-                  <div className="space-y-6">
-                    <h3 className="text-heading-3 flex items-center">
-                      <Phone className="w-5 h-5 mr-2 text-blue-600" />
-                      Basic Information
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label htmlFor="campaign-name" className="block text-sm font-medium text-gray-700 mb-2">
-                          Campaign Name
-                        </label>
-                        <input
-                          id="campaign-name"
-                          type="text"
-                          value={formData.name}
-                          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                          className="form-input"
-                          placeholder="Enter campaign name"
-                          aria-describedby={getError('name') ? "name-error" : undefined}
-                        />
-                        {getError('name') && <p id="name-error" className="text-red-500 text-sm mt-1">{getError('name')}</p>}
-                      </div>
-
-                      {/* Phone Number Selection */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <div className="flex items-center">
                             <Phone className="w-4 h-4 mr-1" />
                             Outbound Caller ID
                             <div className="relative ml-2 group">
