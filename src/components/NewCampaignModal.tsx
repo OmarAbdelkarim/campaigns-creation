@@ -669,17 +669,16 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
           };
         }, {})
       }));
+    } else {
+      // Reset schedule when dates are cleared
+      setFormData(prev => ({
+        ...prev,
+        schedule: WEEKDAYS.reduce((acc, day) => ({
+          ...acc,
+          [day.key]: { enabled: false, startTime: '09:00', endTime: '17:00' }
+        }), {})
+      }));
     }
-  } else {
-    // Reset schedule when dates are cleared
-    setFormData(prev => ({
-      ...prev,
-      schedule: WEEKDAYS.reduce((acc, day) => ({
-        ...acc,
-        [day.key]: { enabled: false, startTime: '09:00', endTime: '17:00' }
-      }), {})
-    }));
-  }
   }, [formData.startDate, formData.endDate]);
 
   useEffect(() => {
