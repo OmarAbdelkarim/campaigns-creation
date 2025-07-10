@@ -1,3 +1,6 @@
+Here's the fixed version with all missing closing brackets and proper indentation:
+
+```typescript
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Calendar, Clock, Phone, Globe, ChevronDown, ChevronUp, Info, Workflow, ChevronLeft, ChevronRight, AlertCircle, Settings } from 'lucide-react';
 import { TimeInput } from './TimeInput';
@@ -655,3 +658,4 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     </div>
   );
 };
+```
