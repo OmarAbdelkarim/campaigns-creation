@@ -263,6 +263,49 @@ const TimeSlotInput = React.memo<{
     const disabledClasses = 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed';
     const errorClasses = 'border-red-300';
     
+    // Concurrency Auto-Scaling validation (only when toggle is ON)
+    if (formData.concurrencyAutoScaling) {
+      if (!formData.minConcurrency || formData.minConcurrency < 1) {
+        newErrors.minConcurrency = 'Minimum concurrency is required and must be at least 1';
+      }
+      
+      if (!formData.maxConcurrency || formData.maxConcurrency < 1) {
+        newErrors.maxConcurrency = 'Maximum concurrency is required and must be at least 1';
+      }
+      
+      if (formData.minConcurrency && formData.maxConcurrency && formData.minConcurrency >= formData.maxConcurrency) {
+        newErrors.maxConcurrency = 'Maximum concurrency must be greater than minimum concurrency';
+      }
+      
+      if (formData.maxConcurrency && formData.maxConcurrency > 100) {
+        newErrors.maxConcurrency = 'Maximum concurrency cannot exceed 100';
+      }
+      
+      if (!formData.targetAnswerRate || formData.targetAnswerRate < 1 || formData.targetAnswerRate > 100) {
+        newErrors.targetAnswerRate = 'Target answer rate is required and must be between 1-100%';
+      }
+      
+      if (!formData.scaleUpThreshold || formData.scaleUpThreshold < 1 || formData.scaleUpThreshold > 100) {
+        newErrors.scaleUpThreshold = 'Scale up threshold is required and must be between 1-100%';
+      }
+      
+      if (!formData.scaleDownThreshold || formData.scaleDownThreshold < 1 || formData.scaleDownThreshold > 100) {
+        newErrors.scaleDownThreshold = 'Scale down threshold is required and must be between 1-100%';
+      }
+      
+      if (formData.scaleUpThreshold && formData.scaleDownThreshold && formData.scaleDownThreshold >= formData.scaleUpThreshold) {
+        newErrors.scaleDownThreshold = 'Scale down threshold must be less than scale up threshold';
+      }
+      
+      if (!formData.evaluationPeriod || formData.evaluationPeriod < 1 || formData.evaluationPeriod > 60) {
+        newErrors.evaluationPeriod = 'Evaluation period is required and must be between 1-60 minutes';
+      }
+      
+      if (!formData.groupName || !formData.groupName.trim()) {
+        newErrors.groupName = 'Group name is required when auto-scaling is enabled';
+      }
+    }
+
     let classes = baseClasses;
     if (enabled) {
       classes += ' ' + enabledClasses;
@@ -457,6 +500,49 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
       if (!timeRegex.test(formData.retryInterval)) {
         newErrors.retryInterval = 'Invalid time format. Use HH:MM:SS (00:00:00 to 23:59:59)';
+      }
+
+      // Concurrency Auto-Scaling validation (only when toggle is ON)
+      if (formData.concurrencyAutoScaling) {
+        if (!formData.minConcurrency || formData.minConcurrency < 1) {
+          newErrors.minConcurrency = 'Minimum concurrency is required and must be at least 1';
+        }
+        
+        if (!formData.maxConcurrency || formData.maxConcurrency < 1) {
+          newErrors.maxConcurrency = 'Maximum concurrency is required and must be at least 1';
+        }
+        
+        if (formData.minConcurrency && formData.maxConcurrency && formData.minConcurrency >= formData.maxConcurrency) {
+          newErrors.maxConcurrency = 'Maximum concurrency must be greater than minimum concurrency';
+        }
+        
+        if (formData.maxConcurrency && formData.maxConcurrency > 100) {
+          newErrors.maxConcurrency = 'Maximum concurrency cannot exceed 100';
+        }
+        
+        if (!formData.targetAnswerRate || formData.targetAnswerRate < 1 || formData.targetAnswerRate > 100) {
+          newErrors.targetAnswerRate = 'Target answer rate is required and must be between 1-100%';
+        }
+        
+        if (!formData.scaleUpThreshold || formData.scaleUpThreshold < 1 || formData.scaleUpThreshold > 100) {
+          newErrors.scaleUpThreshold = 'Scale up threshold is required and must be between 1-100%';
+        }
+        
+        if (!formData.scaleDownThreshold || formData.scaleDownThreshold < 1 || formData.scaleDownThreshold > 100) {
+          newErrors.scaleDownThreshold = 'Scale down threshold is required and must be between 1-100%';
+        }
+        
+        if (formData.scaleUpThreshold && formData.scaleDownThreshold && formData.scaleDownThreshold >= formData.scaleUpThreshold) {
+          newErrors.scaleDownThreshold = 'Scale down threshold must be less than scale up threshold';
+        }
+        
+        if (!formData.evaluationPeriod || formData.evaluationPeriod < 1 || formData.evaluationPeriod > 60) {
+          newErrors.evaluationPeriod = 'Evaluation period is required and must be between 1-60 minutes';
+        }
+        
+        if (!formData.groupName || !formData.groupName.trim()) {
+          newErrors.groupName = 'Group name is required when auto-scaling is enabled';
+        }
       }
 
       if (isAdvancedConfigExpanded) {
