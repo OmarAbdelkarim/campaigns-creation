@@ -904,25 +904,46 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         {/* Toggle Button */}
                         <button
                           type="button"
-                          onClick={() => setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
+                          onClick={() => formData.ivr && setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
                           className={`
                             relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                            ${isAdvancedConfigExpanded ? 'bg-blue-600' : 'bg-gray-300'}
+                            ${!formData.ivr 
+                              ? 'bg-gray-200 cursor-not-allowed' 
+                              : isAdvancedConfigExpanded 
+                                ? 'bg-blue-600' 
+                                : 'bg-gray-300'
+                            }
                           `}
+                          disabled={!formData.ivr}
                           role="switch"
                           aria-checked={isAdvancedConfigExpanded}
-                          aria-label="Toggle concurrency auto-scaling"
+                          aria-label={!formData.ivr ? "Select an IVR to enable concurrency auto-scaling" : "Toggle concurrency auto-scaling"}
                         >
                           <span
                             className={`
                               inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out
-                              ${isAdvancedConfigExpanded ? 'translate-x-6' : 'translate-x-1'}
+                              ${!formData.ivr 
+                                ? 'translate-x-1' 
+                                : isAdvancedConfigExpanded 
+                                  ? 'translate-x-6' 
+                                  : 'translate-x-1'
+                              }
                             `}
                           />
                         </button>
                       </div>
+                      
+                      {/* IVR Required Message */}
+                      {!formData.ivr && (
+                        <div className="flex items-start space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-amber-800">
+                            <span className="font-medium">IVR selection required:</span> Please select an IVR in the configuration above to enable concurrency auto-scaling options.
+                          </p>
+                        </div>
+                      )}
 
-                      {isAdvancedConfigExpanded && (
+                      {isAdvancedConfigExpanded && formData.ivr && (
                         <div className="px-6 pb-6 border-t border-gray-200 bg-gray-50">
                           <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Group Name Selection */}
