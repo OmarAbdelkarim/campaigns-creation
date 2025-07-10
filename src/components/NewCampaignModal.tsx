@@ -401,7 +401,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
     retryInterval: '00:00:00',
     concurrency: 1,
     autoScalingEnabled: false,
-    groupName: ''
     groupName: '',
     concurrentCallsPerAgent: 1
   });
