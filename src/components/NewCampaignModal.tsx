@@ -331,13 +331,51 @@ const TimeSlotInput = React.memo<{
 TimeSlotInput.displayName = 'TimeSlotInput';
 
 // Memoized StepIndicator component
-const StepIndicator = React.memo<{
-  currentStep: number;
-}>(({ currentStep }) => {
+const StepIndicator = React.memo(({ currentStep }: { currentStep: number }) => {
   const stepLabels = useMemo(() => [
     'Campaign Info & Configurations',
     'Schedule Configuration'
   ], []);
+
+  return (
+    <div className="flex items-center justify-center mb-8">
+      <div className="flex items-center space-x-4">
+        {stepLabels.map((label, index) => {
+          const stepNumber = index + 1;
+          const isActive = stepNumber === currentStep;
+          const isCompleted = stepNumber < currentStep;
+          
+          return (
+            <div key={stepNumber} className="flex items-center">
+              <div className={`
+                flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium
+                ${isActive 
+                  ? 'bg-blue-600 text-white' 
+                  : isCompleted 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gray-200 text-gray-600'
+                }
+              `}>
+                {stepNumber}
+              </div>
+              <span className={`ml-2 text-sm font-medium ${
+                isActive ? 'text-blue-600' : 'text-gray-500'
+              }`}>
+                {label}
+              </span>
+              {index < stepLabels.length - 1 && (
+                <div className="ml-4 w-8 h-0.5 bg-gray-200"></div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+StepIndicator.displayName = 'StepIndicator';
+
 export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   isOpen,
   onClose,
