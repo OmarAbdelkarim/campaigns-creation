@@ -409,6 +409,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isAdvancedConfigExpanded, setIsAdvancedConfigExpanded] = useState(false);
+  const [isAdvancedConcurrencyEnabled, setIsAdvancedConcurrencyEnabled] = useState(false);
 
   // Memoized computed values
   const selectedPhoneNumber = useMemo(() => 
@@ -596,9 +597,31 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
   }, [validateForm, onSubmit, formData, onClose]);
 
   const toggleAdvancedConfig = useCallback(() => {
-    setIsAdvancedConfigExpanded(prev => !prev);
+    setIsAdvancedConfigExpanded(prev => {
+      const newExpanded = !prev;
+      
+      // When toggling ON: enable advanced concurrency and set concurrency to 1
+      if (newExpanded) {
+        setIsAdvancedConcurrencyEnabled(true);
+        handleFormDataChange('concurrency', 1);
+      } else {
+        // When toggling OFF: disable advanced concurrency
+        setIsAdvancedConcurrencyEnabled(false);
+      }
+      
+      return newExpanded;
+    });
   }, []);
 
+  // Effect to handle concurrency field behavior when advanced settings are enabled
+  useEffect(() => {
+    if (isAdvancedConcurrencyEnabled && isAdvancedConfigExpanded) {
+      // Maintain concurrency at 1 when advanced settings are ON
+      if (formData.concurrency !== 1) {
+        handleFormDataChange('concurrency', 1);
+      }
+    }
+  }, [isAdvancedConcurrencyEnabled, isAdvancedConfigExpanded, formData.concurrency, handleFormDataChange]);
   // Effects
   useEffect(() => {
     if (formData.startDate && formData.endDate) {
@@ -847,14 +870,30 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                           min="1"
                           max="100"
                           value={formData.concurrency}
-                          onChange={(e) => handleFormDataChange('concurrency', parseInt(e.target.value) || 1)}
-                          className="form-input h-12"
+                          onChange={(e) => {
+                            // Only allow changes if advanced concurrency is not enabled
+                            if (!isAdvancedConcurrencyEnabled) {
+                              handleFormDataChange('concurrency', parseInt(e.target.value) || 1);
+                            }
+                          }}
+                          className={`form-input h-12 ${
+                            isAdvancedConcurrencyEnabled 
+                              ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
+                              : ''
+                          }`}
+                          disabled={isAdvancedConcurrencyEnabled}
                           aria-describedby={getError('concurrency') ? "concurrency-error" : undefined}
                         />
                         {getError('concurrency') && <p id="concurrency-error" className="text-red-500 text-sm mt-1">{getError('concurrency')}</p>}
-                        <p className="text-xs text-gray-500 mt-1">
-                          Maximum simultaneous calls
-                        </p>
+                        {isAdvancedConcurrencyEnabled ? (
+                          <p className="text-xs text-amber-600 mt-1">
+                            <span className="font-medium">Auto-managed:</span> Concurrency is automatically set to 1 when Advanced Concurrency Settings are enabled
+                          </p>
+                        ) : (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Maximum simultaneous calls
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -912,7 +951,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                         {/* Toggle Button */}
                         <button
                           type="button"
-                          onClick={() => formData.ivr && setIsAdvancedConfigExpanded(!isAdvancedConfigExpanded)}
+                          onClick={() => formData.ivr && toggleAdvancedConfig()}
                           className={`
                             relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
                             ${!formData.ivr 
