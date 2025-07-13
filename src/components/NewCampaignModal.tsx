@@ -996,7 +996,16 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                             {/* Group Name Selection */}
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Group Name
+                                <div className="flex items-center">
+                                  Group Name
+                                  <div className="relative ml-2 group">
+                                    <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 w-64">
+                                      Select an agent group to calculate the number of concurrent outbound calls automatically. The system will base this calculation on the number of agents currently online in the selected group.
+                                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  </div>
+                                </div>
                               </label>
                               <div className="relative group-dropdown-container">
                                 <button
