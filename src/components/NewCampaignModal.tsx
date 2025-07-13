@@ -1006,6 +1006,7 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                     </div>
                                   </div>
                                 </div>
+                                </div>
                               </label>
                               <div className="relative group-dropdown-container">
                                 <button
