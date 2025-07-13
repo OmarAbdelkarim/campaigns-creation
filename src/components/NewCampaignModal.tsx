@@ -998,13 +998,11 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 <div className="flex items-center">
                                   Group Name
-                                  <div className="relative ml-2 group">
+                                  <div className="relative ml-2 group inline-block">
                                     <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-5 py-4 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 min-w-[320px] max-w-[400px]">
-                                      <div className="whitespace-normal leading-relaxed text-left">
-                                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                                    </div>
-                                  </div>
+                                    <div className="invisible group-hover:visible absolute left-6 top-0 w-80 p-3 bg-gray-800 text-white text-sm rounded-md shadow-lg z-[9999] whitespace-normal">
+                                      Select an agent group to calculate the number of concurrent outbound calls automatically. The system will base this calculation on the number of agents currently online in the selected group.
+                                      <div className="absolute left-0 top-2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-gray-800 -ml-1"></div>
                                 </div>
                                 </div>
                               </label>
