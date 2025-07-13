@@ -1004,7 +1004,6 @@ export const NewCampaignModal: React.FC<NewCampaignModalProps> = ({
                                       Select an agent group to calculate the number of concurrent outbound calls automatically. The system will base this calculation on the number of agents currently online in the selected group.
                                       <div className="absolute left-0 top-2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-gray-800 -ml-1"></div>
                                 </div>
-                                </div>
                               </label>
                               <div className="relative group-dropdown-container">
                                 <button
